@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Học Pháp Ngữ · Polly</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0f0e17;
+    --surface: #1a1929;
+    --card: #211f35;
+    --border: #2e2b4a;
+    --gold: #c9a84c;
+    --gold-dim: #7a6230;
+    --lavender: #9b8ec4;
+    --text: #ece9f5;
+    --muted: #7a7890;
+    --green: #4caf7d;
+    --red: #e05c5c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--gold);
+  }
+  .logo em { font-style: italic; color: var(--lavender); }
+  .mode-tabs { display: flex; gap: 6px; }
+  .mode-tab {
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+  .mode-tab.active {
+    background: var(--gold);
+    color: #0f0e17;
+    border-color: var(--gold);
+    font-weight: 600;
+  }
+
+  .main { padding: 28px 24px; max-width: 780px; margin: 0 auto; }
+
+  .filter-row {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 20px; align-items: center;
+  }
+  .filter-label { font-size: 0.78rem; color: var(--muted); margin-right: 4px; }
+  .filter-btn {
+    padding: 5px 13px; border-radius: 12px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--muted); font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn.active { border-color: var(--lavender); color: var(--lavender); background: rgba(155,142,196,0.1); }
+
+  .progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 6px; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--lavender)); border-radius: 2px; transition: width 0.4s ease; }
+  .progress-info { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); margin-bottom: 24px; }
+
+  /* FLASHCARD */
+  .flashcard-scene {
+    perspective: 1000px; width: 100%; max-width: 480px; height: 260px;
+    margin: 0 auto 24px; cursor: pointer;
+  }
+  .flashcard-inner {
+    width: 100%; height: 100%; position: relative;
+    transform-style: preserve-3d; transition: transform 0.55s cubic-bezier(.4,.2,.2,1);
+  }
+  .flashcard-inner.flipped { transform: rotateY(180deg); }
+  .flashcard-face {
+    position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+    border-radius: 16px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 32px; text-align: center;
+  }
+  .flashcard-front { background: var(--card); border: 1px solid var(--border); }
+  .flashcard-back {
+    background: linear-gradient(135deg, #1d1b35 0%, #211f35 100%);
+    border: 1px solid var(--gold-dim); transform: rotateY(180deg);
+  }
+  .card-lang-tag { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .card-word { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--text); margin-bottom: 8px; line-height: 1.2; }
+  .flashcard-back .card-word { color: var(--gold); }
+  .card-type { font-size: 0.75rem; color: var(--lavender); font-style: italic; }
+  .card-example { font-size: 0.82rem; color: var(--muted); font-style: italic; margin-top: 10px; line-height: 1.5; }
+  .flip-hint { font-size: 0.72rem; color: var(--muted); text-align: center; margin-bottom: 18px; opacity: 0.6; }
+
+  .fc-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+  .fc-btn {
+    padding: 10px 24px; border-radius: 24px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 0.85rem;
+    cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+  }
+  .fc-btn.wrong:hover { border-color: var(--red); color: var(--red); }
+  .fc-btn.correct:hover { border-color: var(--green); color: var(--green); }
+
+  /* MATCHING */
+  .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .match-col { display: flex; flex-direction: column; gap: 10px; }
+  .match-item {
+    padding: 13px 16px; background: var(--card); border: 1.5px solid var(--border);
+    border-radius: 10px; font-size: 0.88rem; cursor: pointer; transition: all 0.2s;
+    text-align: center; user-select: none; min-height: 52px;
+    display: flex; align-items: center; justify-content: center; line-height: 1.3;
+  }
+  .match-item.selected { border-color: var(--lavender); background: rgba(155,142,196,0.15); color: var(--lavender); }
+  .match-item.correct { border-color: var(--green); background: rgba(76,175,125,0.12); color: var(--green); cursor: default; }
+  .match-item.wrong { border-color: var(--red); background: rgba(224,92,92,0.12); color: var(--red); }
+  .match-item:hover:not(.correct):not(.disabled) { border-color: var(--lavender); }
+
+  .match-result { text-align: center; padding: 24px; background: var(--card); border-radius: 14px; border: 1px solid var(--border); display: none; margin-bottom: 20px; }
+  .match-result.show { display: block; }
+  .match-score { font-size: 2rem; font-weight: 700; color: var(--gold); margin-bottom: 6px; }
+  .match-msg { color: var(--muted); font-size: 0.85rem; margin-bottom: 16px; }
+
+  /* COMPLETE */
+  .complete-screen { text-align: center; padding: 40px 20px; display: none; }
+  .complete-screen.show { display: block; }
+  .complete-icon { font-size: 3rem; margin-bottom: 12px; }
+  .complete-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--gold); margin-bottom: 8px; }
+  .complete-msg { color: var(--muted); font-size: 0.88rem; margin-bottom: 20px; }
+
+  .restart-btn {
+    padding: 11px 26px; background: var(--gold); border: none; border-radius: 24px;
+    color: #0f0e17; font-weight: 700; font-size: 0.88rem; cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+
+  /* ADD FORM */
+  .add-section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 28px; }
+  .add-title { font-size: 0.82rem; font-weight: 600; color: var(--gold); margin-bottom: 14px; }
+  .add-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .add-input {
+    flex: 1; min-width: 110px; padding: 9px 12px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+    font-size: 0.84rem; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s;
+  }
+  .add-input:focus { border-color: var(--gold-dim); }
+  .add-input::placeholder { color: var(--muted); }
+  select.add-input { max-width: 160px; }
+  .add-btn {
+    padding: 9px 18px; background: var(--gold); border: none; border-radius: 8px;
+    color: #0f0e17; font-weight: 600; font-size: 0.84rem; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: opacity 0.2s;
+  }
+  .add-btn:hover { opacity: 0.85; }
+
+  .hidden { display: none !important; }
+
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  .shake { animation: shake 0.3s ease; }
+
+  /* IMPORT EXCEL */
+  .import-btn {
+    padding: 9px 16px; background: transparent; border: 1px dashed var(--gold-dim);
+    border-radius: 8px; color: var(--gold); font-size: 0.84rem; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: all 0.2s; white-space: nowrap;
+  }
+  .import-btn:hover { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 100; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--gold); margin-bottom: 6px; }
+  .modal-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+  .modal-label { font-size: 0.78rem; color: var(--lavender); font-weight: 600; margin-bottom: 6px; display: block; letter-spacing: 0.05em; text-transform: uppercase; }
+  .modal-select {
+    width: 100%; padding: 9px 12px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 0.84rem; font-family: 'Inter', sans-serif;
+    outline: none; margin-bottom: 14px;
+  }
+  .modal-select:focus { border-color: var(--gold-dim); }
+  .col-map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .col-map-item label { font-size: 0.75rem; color: var(--muted); display: block; margin-bottom: 4px; }
+  .preview-table-wrap { overflow-x: auto; margin-bottom: 16px; border-radius: 8px; border: 1px solid var(--border); }
+  .preview-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .preview-table th { background: var(--card); padding: 8px 10px; text-align: left; color: var(--lavender); border-bottom: 1px solid var(--border); }
+  .preview-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .preview-table tr:last-child td { border-bottom: none; }
+  .preview-count { font-size: 0.78rem; color: var(--muted); margin-bottom: 14px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-cancel { padding: 9px 18px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--muted); font-size: 0.84rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .modal-cancel:hover { color: var(--text); border-color: var(--text); }
+  .modal-confirm { padding: 9px 20px; background: var(--gold); border: none; border-radius: 8px; color: #0f0e17; font-weight: 600; font-size: 0.84rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .modal-confirm:disabled { opacity: 0.4; cursor: default; }
+  .import-notice { font-size: 0.76rem; color: var(--muted); background: var(--card); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Học Pháp Ngữ <em>· Polly</em></div>
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tabFC" onclick="switchMode('flashcard')">🃏 Flashcard</button>
+    <button class="mode-tab" id="tabMT" onclick="switchMode('match')">🔗 Nối từ</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="filter-row">
+    <span class="filter-label">Chủ đề:</span>
+    <button class="filter-btn active" onclick="setCategory('all',this)">Tất cả</button>
+    <button class="filter-btn" onclick="setCategory('pronoms',this)">Đại từ</button>
+    <button class="filter-btn" onclick="setCategory('verbes',this)">Động từ</button>
+    <button class="filter-btn" onclick="setCategory('vie_quotidienne',this)">Đời sống</button>
+    <button class="filter-btn" onclick="setCategory('grammaire',this)">Ngữ pháp</button>
+  </div>
+
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+  <div class="progress-info">
+    <span id="progressText">0 / 0</span>
+    <span id="scoreText"></span>
+  </div>
+
+  <!-- FLASHCARD MODE -->
+  <div id="flashcardMode">
+    <div class="flashcard-scene" onclick="flipCard()">
+      <div class="flashcard-inner" id="cardInner">
+        <div class="flashcard-face flashcard-front">
+          <div class="card-lang-tag">🇫🇷 Tiếng Pháp</div>
+          <div class="card-word" id="cardFR">—</div>
+          <div class="card-type" id="cardType"></div>
+        </div>
+        <div class="flashcard-face flashcard-back">
+          <div class="card-lang-tag">🇻🇳 Tiếng Việt</div>
+          <div class="card-word" id="cardVI">—</div>
+          <div class="card-example" id="cardExample"></div>
+        </div>
+      </div>
+    </div>
+    <p class="flip-hint">👆 Nhấn vào thẻ để lật · Nhấn phím Space cũng được</p>
+
+    <div class="fc-actions" id="fcActions">
+      <button class="fc-btn wrong" onclick="markCard(false)">✗ Chưa nhớ</button>
+      <button class="fc-btn correct" onclick="markCard(true)">✓ Đã nhớ</button>
+    </div>
+
+    <div class="complete-screen" id="fcComplete">
+      <div class="complete-icon">🎉</div>
+      <div class="complete-title">Bravo, Polly!</div>
+      <div class="complete-msg" id="fcMsg"></div>
+      <button class="restart-btn" onclick="startFlashcard()">Ôn lại từ đầu</button>
+    </div>
+  </div>
+
+  <!-- MATCHING MODE -->
+  <div id="matchMode" class="hidden">
+    <div class="match-grid">
+      <div class="match-col" id="matchLeft"></div>
+      <div class="match-col" id="matchRight"></div>
+    </div>
+    <div class="match-result" id="matchResult">
+      <div class="match-score" id="matchScore"></div>
+      <div class="match-msg" id="matchMsg"></div>
+      <button class="restart-btn" onclick="startMatch()">Chơi lại 🔄</button>
+    </div>
+  </div>
+
+  <!-- ADD CARD -->
+  <div class="add-section">
+    <div class="add-title">➕ Thêm từ của bạn</div>
+    <div class="add-row">
+      <input class="add-input" id="newFR" placeholder="Tiếng Pháp (vd: le livre)" />
+      <input class="add-input" id="newVI" placeholder="Tiếng Việt (vd: cuốn sách)" />
+      <input class="add-input" id="newType" placeholder="Loại từ (n.m.)" style="max-width:100px" />
+    </div>
+    <div class="add-row">
+      <select class="add-input" id="newCat">
+        <option value="vie_quotidienne">Đời sống</option>
+        <option value="pronoms">Đại từ</option>
+        <option value="verbes">Động từ</option>
+        <option value="grammaire">Ngữ pháp</option>
+      </select>
+      <input class="add-input" id="newEx" placeholder="Ví dụ câu (tuỳ chọn)" />
+      <button class="add-btn" id="addBtn" onclick="addCard()">Thêm từ</button>
+    </div>
+    <div class="add-row" style="margin-bottom:0; margin-top:4px;">
+      <button class="import-btn" onclick="document.getElementById('xlsxFile').click()">📥 Import từ Excel (.xlsx)</button>
+      <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none" onchange="onFileSelected(event)" />
+      <span id="importStatus" style="font-size:0.78rem;color:var(--muted);align-self:center;"></span>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <div class="modal-title">📥 Import từ Excel</div>
+    <div class="modal-sub">Chọn sheet và ghép cột tương ứng. Mình sẽ xem trước 5 dòng đầu để bạn kiểm tra.</div>
+
+    <div class="import-notice">
+      💡 File <strong>vocabulaire_A1_A2.xlsx</strong> của bạn có nhiều sheet — chọn đúng sheet muốn import, sau đó chọn cột nào là <em>tiếng Pháp</em> và cột nào là <em>tiếng Việt</em>.
+    </div>
+
+    <label class="modal-label">Chọn sheet</label>
+    <select class="modal-select" id="sheetSelect" onchange="onSheetChange()"></select>
+
+    <div class="col-map-grid">
+      <div class="col-map-item">
+        <label>Cột Tiếng Pháp 🇫🇷</label>
+        <select class="modal-select" id="colFR" style="margin-bottom:0"></select>
+      </div>
+      <div class="col-map-item">
+        <label>Cột Tiếng Việt 🇻🇳</label>
+        <select class="modal-select" id="colVI" style="margin-bottom:0"></select>
+      </div>
+      <div class="col-map-item">
+        <label>Cột Loại từ (tuỳ chọn)</label>
+        <select class="modal-select" id="colType" style="margin-bottom:0"></select>
+      </div>
+      <div class="col-map-item">
+        <label>Cột Ví dụ câu (tuỳ chọn)</label>
+        <select class="modal-select" id="colEx" style="margin-bottom:0"></select>
+      </div>
+    </div>
+
+    <div class="preview-count" id="previewCount"></div>
+    <div class="preview-table-wrap">
+      <table class="preview-table" id="previewTable"></table>
+    </div>
+
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Huỷ</button>
+      <button class="modal-confirm" id="confirmImport" onclick="doImport()">Import tất cả</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const defaultCards = [
+  { fr:"en", vi:"của nó / một số", type:"pron.", cat:"pronoms", ex:"J'en veux deux. — Tôi muốn hai cái." },
+  { fr:"y", vi:"ở đó / đến đó", type:"pron.", cat:"pronoms", ex:"J'y vais demain. — Tôi đến đó ngày mai." },
+  { fr:"le / la / les", vi:"anh ấy / cô ấy / chúng (COD)", type:"pron. COD", cat:"pronoms", ex:"Je le mange. — Tôi ăn nó." },
+  { fr:"lui / leur", vi:"cho anh ấy / cho họ (COI)", type:"pron. COI", cat:"pronoms", ex:"Je lui parle. — Tôi nói chuyện với anh ấy." },
+  { fr:"me / te / nous / vous", vi:"tôi / bạn / chúng tôi / các bạn", type:"pron. réfl.", cat:"pronoms", ex:"Il me voit. — Anh ấy thấy tôi." },
+
+  { fr:"aller", vi:"đi (đến)", type:"v.", cat:"verbes", ex:"Je vais à Paris. — Tôi đi Paris." },
+  { fr:"avoir", vi:"có", type:"v. aux.", cat:"verbes", ex:"J'ai un chat. — Tôi có một con mèo." },
+  { fr:"être", vi:"là / ở", type:"v. aux.", cat:"verbes", ex:"Je suis étudiant. — Tôi là sinh viên." },
+  { fr:"vouloir", vi:"muốn", type:"v.", cat:"verbes", ex:"Je veux du café. — Tôi muốn cà phê." },
+  { fr:"pouvoir", vi:"có thể", type:"v.", cat:"verbes", ex:"Je peux venir. — Tôi có thể đến." },
+  { fr:"faire", vi:"làm / thực hiện", type:"v.", cat:"verbes", ex:"Je fais du sport. — Tôi tập thể thao." },
+  { fr:"prendre", vi:"lấy / đi (phương tiện)", type:"v.", cat:"verbes", ex:"Je prends le bus. — Tôi đi xe buýt." },
+  { fr:"savoir", vi:"biết (kiến thức)", type:"v.", cat:"verbes", ex:"Je sais nager. — Tôi biết bơi." },
+  { fr:"connaître", vi:"biết (quen biết)", type:"v.", cat:"verbes", ex:"Je connais Marie. — Tôi biết Marie." },
+  { fr:"nettoyer", vi:"dọn dẹp / lau sạch", type:"v. -yer", cat:"verbes", ex:"Je nettoie la table. — Tôi lau bàn." },
+  { fr:"payer", vi:"trả tiền", type:"v. -yer", cat:"verbes", ex:"Je paie par carte. — Tôi trả bằng thẻ." },
+  { fr:"essayer", vi:"thử", type:"v. -yer", cat:"verbes", ex:"J'essaie cette robe. — Tôi thử chiếc váy này." },
+  { fr:"employer", vi:"sử dụng / thuê (người)", type:"v. -yer", cat:"verbes", ex:"Il emploie dix personnes. — Anh ấy thuê mười người." },
+
+  { fr:"le matin", vi:"buổi sáng", type:"n.m.", cat:"vie_quotidienne", ex:"Je me lève le matin. — Tôi thức dậy buổi sáng." },
+  { fr:"le soir", vi:"buổi tối", type:"n.m.", cat:"vie_quotidienne", ex:"Je lis le soir. — Tôi đọc sách buổi tối." },
+  { fr:"la maison", vi:"ngôi nhà", type:"n.f.", cat:"vie_quotidienne", ex:"Je reste à la maison. — Tôi ở nhà." },
+  { fr:"le marché", vi:"chợ / thị trường", type:"n.m.", cat:"vie_quotidienne", ex:"Je vais au marché. — Tôi đi chợ." },
+  { fr:"les courses", vi:"đi mua sắm / đi chợ", type:"n.f.pl.", cat:"vie_quotidienne", ex:"Je fais les courses. — Tôi đi mua đồ." },
+  { fr:"le travail", vi:"công việc", type:"n.m.", cat:"vie_quotidienne", ex:"J'aime mon travail. — Tôi yêu công việc mình." },
+  { fr:"la nourriture", vi:"thức ăn", type:"n.f.", cat:"vie_quotidienne", ex:"La nourriture est bonne. — Thức ăn rất ngon." },
+
+  { fr:"parce que", vi:"bởi vì / vì", type:"conj.", cat:"grammaire", ex:"Je reste parce que je suis fatigué. — Tôi ở lại vì tôi mệt." },
+  { fr:"mais", vi:"nhưng", type:"conj.", cat:"grammaire", ex:"C'est cher mais beau. — Đắt nhưng đẹp." },
+  { fr:"donc", vi:"vì vậy / vậy thì", type:"conj.", cat:"grammaire", ex:"J'ai faim, donc je mange. — Tôi đói, vậy tôi ăn." },
+  { fr:"très", vi:"rất", type:"adv.", cat:"grammaire", ex:"C'est très bien. — Rất tốt." },
+  { fr:"assez", vi:"khá / đủ", type:"adv.", cat:"grammaire", ex:"C'est assez loin. — Khá xa." },
+  { fr:"ne ... pas", vi:"không (phủ định)", type:"adv. nég.", cat:"grammaire", ex:"Je ne sais pas. — Tôi không biết." },
+];
+
+let allCards = [...defaultCards];
+let filteredCards = [];
+let currentCategory = 'all';
+let currentMode = 'flashcard';
+
+// Flashcard
+let fcQueue = [], fcIndex = 0, fcCorrect = 0, fcWrong = 0, isFlipped = false;
+
+// Match
+let matchSelected = null, matchCorrect = 0, matchTotal = 0;
+
+// Storage
+function saveCards() {
+  try { localStorage.setItem('polly_french', JSON.stringify(allCards)); } catch(e){}
+}
+function loadCards() {
+  try {
+    const s = localStorage.getItem('polly_french');
+    if (s) { const d = JSON.parse(s); if (d.length) allCards = d; }
+  } catch(e){}
+}
+
+function shuffle(arr) {
+  for (let i = arr.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function setCategory(cat, btn) {
+  currentCategory = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  filteredCards = cat === 'all' ? [...allCards] : allCards.filter(c => c.cat === cat);
+  shuffle(filteredCards);
+  if (currentMode === 'flashcard') startFlashcard();
+  else startMatch();
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.getElementById('tabFC').classList.toggle('active', mode==='flashcard');
+  document.getElementById('tabMT').classList.toggle('active', mode==='match');
+  document.getElementById('flashcardMode').classList.toggle('hidden', mode!=='flashcard');
+  document.getElementById('matchMode').classList.toggle('hidden', mode!=='match');
+  filteredCards = currentCategory === 'all' ? [...allCards] : allCards.filter(c => c.cat === currentCategory);
+  shuffle(filteredCards);
+  if (mode === 'flashcard') startFlashcard();
+  else startMatch();
+}
+
+// -------- FLASHCARD --------
+function startFlashcard() {
+  fcQueue = [...filteredCards];
+  shuffle(fcQueue);
+  fcIndex = 0; fcCorrect = 0; fcWrong = 0; isFlipped = false;
+  document.getElementById('cardInner').classList.remove('flipped');
+  document.getElementById('fcComplete').classList.remove('show');
+  document.getElementById('fcActions').style.display = '';
+  updateProgressFC();
+  showCard();
+}
+
+function showCard() {
+  if (fcIndex >= fcQueue.length) { showFCDone(); return; }
+  const c = fcQueue[fcIndex];
+  document.getElementById('cardFR').textContent = c.fr;
+  document.getElementById('cardType').textContent = c.type || '';
+  document.getElementById('cardVI').textContent = c.vi;
+  document.getElementById('cardExample').textContent = c.ex || '';
+  isFlipped = false;
+  document.getElementById('cardInner').classList.remove('flipped');
+  updateProgressFC();
+}
+
+function flipCard() {
+  isFlipped = !isFlipped;
+  document.getElementById('cardInner').classList.toggle('flipped', isFlipped);
+}
+
+function markCard(correct) {
+  if (correct) { fcCorrect++; }
+  else { fcWrong++; fcQueue.push(fcQueue[fcIndex]); }
+  fcIndex++;
+  showCard();
+}
+
+function showFCDone() {
+  document.getElementById('fcActions').style.display = 'none';
+  document.getElementById('fcComplete').classList.add('show');
+  const pct = Math.round(fcCorrect / (fcCorrect + fcWrong) * 100);
+  document.getElementById('fcMsg').textContent = `Bạn nhớ đúng ${fcCorrect}/${fcCorrect+fcWrong} lần (${pct}%) 🌟`;
+}
+
+function updateProgressFC() {
+  const total = filteredCards.length;
+  const done = Math.min(fcIndex, total);
+  const pct = total > 0 ? Math.round(done/total*100) : 0;
+  document.getElementById('progressBar').style.width = pct+'%';
+  document.getElementById('progressText').textContent = done+' / '+total;
+  document.getElementById('scoreText').textContent = '✓ '+fcCorrect+'  ✗ '+fcWrong;
+}
+
+// -------- MATCHING --------
+function startMatch() {
+  const pool = filteredCards.length > 6 ? filteredCards.slice(0,6) : [...filteredCards];
+  matchTotal = pool.length;
+  matchCorrect = 0;
+  matchSelected = null;
+
+  if (pool.length < 2) {
+    document.getElementById('matchLeft').innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Cần ít nhất 2 từ trong chủ đề này.</div>';
+    document.getElementById('matchRight').innerHTML = '';
+    return;
+  }
+
+  const leftItems = pool.map((c,i) => ({id:i, text:c.fr, side:'fr', pair:i}));
+  const rightItems = pool.map((c,i) => ({id:i, text:c.vi, side:'vi', pair:i}));
+  shuffle(rightItems);
+
+  const lEl = document.getElementById('matchLeft');
+  const rEl = document.getElementById('matchRight');
+  lEl.innerHTML = ''; rEl.innerHTML = '';
+  document.getElementById('matchResult').classList.remove('show');
+
+  leftItems.forEach(item => {
+    const d = document.createElement('div');
+    d.className = 'match-item';
+    d.textContent = item.text;
+    d.dataset.pair = item.pair;
+    d.dataset.side = 'fr';
+    d.onclick = () => onMatchClick(d);
+    lEl.appendChild(d);
+  });
+  rightItems.forEach(item => {
+    const d = document.createElement('div');
+    d.className = 'match-item';
+    d.textContent = item.text;
+    d.dataset.pair = item.pair;
+    d.dataset.side = 'vi';
+    d.onclick = () => onMatchClick(d);
+    rEl.appendChild(d);
+  });
+
+  updateProgressMatch();
+}
+
+function onMatchClick(el) {
+  if (el.classList.contains('correct')) return;
+  if (!matchSelected) {
+    el.classList.add('selected');
+    matchSelected = el;
+  } else {
+    if (matchSelected === el) {
+      el.classList.remove('selected'); matchSelected = null; return;
+    }
+    if (matchSelected.dataset.side === el.dataset.side) {
+      matchSelected.classList.remove('selected');
+      el.classList.add('selected');
+      matchSelected = el; return;
+    }
+    if (matchSelected.dataset.pair === el.dataset.pair) {
+      matchSelected.classList.remove('selected');
+      matchSelected.classList.add('correct');
+      el.classList.add('correct');
+      matchCorrect++;
+      matchSelected = null;
+      updateProgressMatch();
+      if (matchCorrect === matchTotal) {
+        setTimeout(() => {
+          document.getElementById('matchScore').textContent = matchCorrect+'/'+matchTotal+' ✓';
+          document.getElementById('matchMsg').textContent = 'Tất cả đã khớp! Bravo! 🎊';
+          document.getElementById('matchResult').classList.add('show');
+        }, 400);
+      }
+    } else {
+      matchSelected.classList.add('wrong');
+      el.classList.add('wrong');
+      const a = matchSelected, b = el;
+      setTimeout(() => {
+        a.classList.remove('selected','wrong');
+        b.classList.remove('selected','wrong');
+      }, 600);
+      matchSelected = null;
+    }
+  }
+}
+
+function updateProgressMatch() {
+  const pct = matchTotal > 0 ? Math.round(matchCorrect/matchTotal*100) : 0;
+  document.getElementById('progressBar').style.width = pct+'%';
+  document.getElementById('progressText').textContent = matchCorrect+' / '+matchTotal+' cặp';
+  document.getElementById('scoreText').textContent = '';
+}
+
+// -------- ADD CARD --------
+function addCard() {
+  const fr = document.getElementById('newFR').value.trim();
+  const vi = document.getElementById('newVI').value.trim();
+  const type = document.getElementById('newType').value.trim();
+  const cat = document.getElementById('newCat').value;
+  const ex = document.getElementById('newEx').value.trim();
+  if (!fr || !vi) { alert('Vui lòng điền tiếng Pháp và tiếng Việt!'); return; }
+  allCards.push({fr,vi,type,cat,ex});
+  saveCards();
+  ['newFR','newVI','newType','newEx'].forEach(id => document.getElementById(id).value='');
+  filteredCards = currentCategory==='all' ? [...allCards] : allCards.filter(c=>c.cat===currentCategory);
+  shuffle(filteredCards);
+  if (currentMode==='flashcard') startFlashcard();
+  else startMatch();
+  const btn = document.getElementById('addBtn');
+  btn.textContent='✓ Đã thêm!';
+  setTimeout(()=>btn.textContent='Thêm từ',1500);
+}
+
+// -------- EXCEL IMPORT --------
+let xlsxWorkbook = null;
+let xlsxSheetData = [];
+
+function onFileSelected(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      xlsxWorkbook = XLSX.read(data, { type: 'array' });
+      openModal();
+    } catch(err) {
+      alert('Không đọc được file. Vui lòng thử lại với file .xlsx hợp lệ.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  // Reset input so same file can be re-selected
+  event.target.value = '';
+}
+
+function openModal() {
+  const sheetSel = document.getElementById('sheetSelect');
+  sheetSel.innerHTML = '';
+  xlsxWorkbook.SheetNames.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    sheetSel.appendChild(opt);
+  });
+  document.getElementById('importModal').classList.add('show');
+  onSheetChange();
+}
+
+function closeModal() {
+  document.getElementById('importModal').classList.remove('show');
+  xlsxWorkbook = null; xlsxSheetData = [];
+}
+
+function onSheetChange() {
+  const sheetName = document.getElementById('sheetSelect').value;
+  const sheet = xlsxWorkbook.Sheets[sheetName];
+  xlsxSheetData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+  // Get headers from first non-empty row
+  let headers = [];
+  for (let i = 0; i < Math.min(5, xlsxSheetData.length); i++) {
+    if (xlsxSheetData[i].some(c => c !== '')) { headers = xlsxSheetData[i].map(String); break; }
+  }
+
+  const colIds = ['colFR', 'colVI', 'colType', 'colEx'];
+  const defaults = { colFR: null, colVI: null, colType: null, colEx: null };
+
+  // Auto-detect common column names
+  headers.forEach((h, i) => {
+    const lower = h.toLowerCase();
+    if (!defaults.colFR && (lower.includes('français') || lower.includes('french') || lower.includes('pháp') || lower === 'fr' || lower === 'mot')) defaults.colFR = i;
+    if (!defaults.colVI && (lower.includes('việt') || lower.includes('viet') || lower.includes('traduction') || lower === 'vi' || lower.includes('nghĩa'))) defaults.colVI = i;
+    if (!defaults.colType && (lower.includes('type') || lower.includes('loại') || lower.includes('nature') || lower.includes('catégorie') || lower === 'pos')) defaults.colType = i;
+    if (!defaults.colEx && (lower.includes('exemple') || lower.includes('ví dụ') || lower.includes('example') || lower.includes('phrase'))) defaults.colEx = i;
+  });
+
+  colIds.forEach((id, idx) => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">— Bỏ qua —</option>';
+    headers.forEach((h, i) => {
+      const opt = document.createElement('option');
+      opt.value = i; opt.textContent = h || `Cột ${i+1}`;
+      sel.appendChild(opt);
+    });
+    const defaultVal = [defaults.colFR, defaults.colVI, defaults.colType, defaults.colEx][idx];
+    if (defaultVal !== null) sel.value = defaultVal;
+  });
+
+  renderPreview();
+  ['colFR','colVI','colType','colEx'].forEach(id => {
+    document.getElementById(id).onchange = renderPreview;
+  });
+}
+
+function getDataRows() {
+  // Skip header row (first non-empty row)
+  if (xlsxSheetData.length < 2) return [];
+  return xlsxSheetData.slice(1).filter(row => row.some(c => String(c).trim() !== ''));
+}
+
+function renderPreview() {
+  const colFR = document.getElementById('colFR').value;
+  const colVI = document.getElementById('colVI').value;
+  const rows = getDataRows();
+  const preview = rows.slice(0, 5);
+  const total = rows.length;
+
+  document.getElementById('previewCount').textContent = `Tổng: ${total} từ sẽ được import`;
+  document.getElementById('confirmImport').disabled = (!colFR && colFR !== '0') || (!colVI && colVI !== '0') || total === 0;
+
+  const table = document.getElementById('previewTable');
+  table.innerHTML = '';
+  const thead = document.createElement('thead');
+  thead.innerHTML = '<tr><th>🇫🇷 Tiếng Pháp</th><th>🇻🇳 Tiếng Việt</th><th>Loại từ</th><th>Ví dụ</th></tr>';
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  preview.forEach(row => {
+    const tr = document.createElement('tr');
+    const get = colId => { const v = document.getElementById(colId).value; return v !== '' ? String(row[v] || '') : '—'; };
+    ['colFR','colVI','colType','colEx'].forEach(id => {
+      const td = document.createElement('td');
+      td.textContent = get(id) || '—';
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+}
+
+function doImport() {
+  const colFR = document.getElementById('colFR').value;
+  const colVI = document.getElementById('colVI').value;
+  const colType = document.getElementById('colType').value;
+  const colEx = document.getElementById('colEx').value;
+  const rows = getDataRows();
+
+  let added = 0, skipped = 0;
+  rows.forEach(row => {
+    const fr = String(row[colFR] || '').trim();
+    const vi = String(row[colVI] || '').trim();
+    if (!fr || !vi) { skipped++; return; }
+    // Skip duplicates
+    if (allCards.some(c => c.fr === fr && c.vi === vi)) { skipped++; return; }
+    const type = colType !== '' ? String(row[colType] || '').trim() : '';
+    const ex = colEx !== '' ? String(row[colEx] || '').trim() : '';
+    allCards.push({ fr, vi, type, cat: 'vie_quotidienne', ex });
+    added++;
+  });
+
+  saveCards();
+  closeModal();
+
+  filteredCards = currentCategory === 'all' ? [...allCards] : allCards.filter(c => c.cat === currentCategory);
+  shuffle(filteredCards);
+  if (currentMode === 'flashcard') startFlashcard(); else startMatch();
+
+  const status = document.getElementById('importStatus');
+  status.textContent = `✓ Đã thêm ${added} từ${skipped > 0 ? ` (bỏ qua ${skipped} trùng/rỗng)` : ''}`;
+  setTimeout(() => status.textContent = '', 4000);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (currentMode !== 'flashcard') return;
+  if (e.code==='Space') { e.preventDefault(); flipCard(); }
+  if (e.code==='ArrowRight') markCard(true);
+  if (e.code==='ArrowLeft') markCard(false);
+});
+
+// Init
+loadCards();
+setCategory('all', document.querySelector('.filter-btn'));
+</script>
+</body>
+</html>
