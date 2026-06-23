@@ -647,7 +647,7 @@ function onMatchClick(el){if(el.classList.contains('correct'))return;if(!matchSe
 function updateProgressMatch(){const pct=matchTotal>0?Math.round(matchCorrect/matchTotal*100):0;document.getElementById('progressBar').style.width=pct+'%';document.getElementById('progressText').textContent=matchCorrect+' / '+matchTotal+' cặp';document.getElementById('scoreText').textContent='';}
 
 // FILL IN THE BLANKS
-const fillTopicMap={'pronominal':['Verbes pronominaux','phản thân','se lever','se maquiller','se brosser','se laver'],'passe':['passé','Passé','AVOIR','ÊTRE','participe','passé composé'],'futur':['futur','aller +','Futur','tương lai'],'negation':['négation','ne /','jamais','personne','rien','plus'],'cod':['COD','COI','aime Marie','parle à','J'aime Marie'],'article':['article','partitif','du','de la','Article'],'structure':['Il faut','avoir envie','Il y a','C'est','être content','être prêt','apprendre']};
+const fillTopicMap={'pronominal':['Verbes pronominaux','phản thân','se lever','se maquiller','se brosser','se laver'],'passe':['passé','Passé','AVOIR','ÊTRE','participe','passé composé'],'futur':['futur','aller +','Futur','tương lai'],'negation':['négation','ne /','jamais','personne','rien','plus'],'cod':['COD','COI','aime Marie','parle à','aime Marie'],'article':['article','partitif','du','de la','Article'],'structure':['Il faut','avoir envie','Il y a','C'est','être content','être prêt','apprendre']};
 
 function setFillFilter(f,btn){fillFilter=f;document.querySelectorAll('.fill-topic-btn').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');startFill();}
 
