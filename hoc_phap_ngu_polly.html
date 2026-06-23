@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Học Pháp Ngữ · Polly v2.1</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Inter:wght@300;400;500;600&display=swap');
+:root{--bg:#f8f8f8;--surface:#ffffff;--card:#ffffff;--border:#e2e4e8;--gold:#b8860b;--gold-dim:#d4a017;--lavender:#6c5fc7;--text:#1a1a2e;--muted:#7a7a90;--green:#2e7d52;--red:#c0392b;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.logo{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--gold);}
+.logo em{font-style:italic;color:var(--lavender);}
+.mode-tabs{display:flex;gap:5px;flex-wrap:wrap;}
+.mode-tab{padding:6px 13px;border-radius:18px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.78rem;cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;}
+.mode-tab.active{background:var(--gold);color:#0f0e17;border-color:var(--gold);font-weight:600;}
+
+.main{padding:18px 20px;max-width:820px;margin:0 auto;}
+
+.filter-section{margin-bottom:14px;}
+.filter-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;align-items:center;}
+.filter-label{font-size:0.72rem;color:var(--muted);min-width:52px;}
+.filter-btn{padding:4px 10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;transition:all 0.2s;}
+.filter-btn.active{border-color:var(--lavender);color:var(--lavender);background:rgba(108,95,199,0.1);}
+.filter-btn:hover:not(.active){border-color:var(--lavender);color:var(--text);}
+.sheet-btn{font-size:0.68rem;padding:3px 8px;}
+.count-badge{font-size:0.7rem;color:var(--muted);margin-left:auto;}
+
+.progress-bar-wrap{height:3px;background:var(--border);border-radius:2px;margin-bottom:5px;overflow:hidden;}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--lavender));border-radius:2px;transition:width 0.4s ease;}
+.progress-info{display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);margin-bottom:18px;}
+
+/* FLASHCARD */
+.flashcard-scene{perspective:1000px;width:100%;max-width:460px;height:220px;margin:0 auto 18px;cursor:pointer;}
+.flashcard-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.5s cubic-bezier(.4,.2,.2,1);}
+.flashcard-inner.flipped{transform:rotateY(180deg);}
+.flashcard-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;}
+.flashcard-front{background:#ffffff;border:1px solid #dde0e8;box-shadow:0 2px 16px rgba(0,0,0,0.08);}
+.flashcard-back{background:linear-gradient(135deg,#f0eeff,#e8e4ff);border:1px solid var(--gold-dim);transform:rotateY(180deg);}
+.card-lang-tag{font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.card-word{font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--text);margin-bottom:5px;line-height:1.2;}
+.flashcard-back .card-word{color:var(--gold);}
+.card-type{font-size:0.68rem;color:var(--lavender);font-style:italic;}
+.card-sheet{font-size:0.65rem;color:var(--muted);margin-top:5px;opacity:0.7;}
+.card-example{font-size:0.76rem;color:var(--muted);font-style:italic;margin-top:7px;line-height:1.5;}
+.flip-hint{font-size:0.67rem;color:var(--muted);text-align:center;margin-bottom:12px;opacity:0.6;}
+.fc-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;}
+.fc-btn{padding:8px 20px;border-radius:22px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:0.82rem;cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;}
+.fc-btn.wrong:hover{border-color:var(--red);color:var(--red);}
+.fc-btn.correct:hover{border-color:var(--green);color:var(--green);}
+
+/* MATCHING */
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.match-col{display:flex;flex-direction:column;gap:7px;}
+.match-item{padding:10px 12px;background:var(--card);border:1.5px solid var(--border);border-radius:9px;font-size:0.82rem;cursor:pointer;transition:all 0.2s;text-align:center;user-select:none;min-height:44px;display:flex;align-items:center;justify-content:center;line-height:1.3;}
+.match-item.selected{border-color:var(--lavender);background:rgba(108,95,199,0.12);color:var(--lavender);}
+.match-item.correct{border-color:var(--green);background:rgba(46,125,82,0.1);color:var(--green);cursor:default;}
+.match-item.wrong{border-color:var(--red);background:rgba(192,57,43,0.08);color:var(--red);}
+.match-item:hover:not(.correct){border-color:var(--lavender);}
+.match-result{text-align:center;padding:18px;background:var(--card);border-radius:12px;border:1px solid var(--border);display:none;margin-bottom:14px;}
+.match-result.show{display:block;}
+.match-score{font-size:1.8rem;font-weight:700;color:var(--gold);margin-bottom:5px;}
+.match-msg{color:var(--muted);font-size:0.82rem;margin-bottom:12px;}
+
+/* FILL IN THE BLANKS */
+.fill-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px;}
+.fill-topic{font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--lavender);margin-bottom:10px;}
+.fill-sentence{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--text);line-height:1.6;margin-bottom:16px;min-height:40px;}
+.fill-blank{display:inline-block;border-bottom:2px solid var(--gold);min-width:80px;margin:0 4px;}
+.fill-input-wrap{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+.fill-input{flex:1;min-width:140px;padding:9px 13px;background:#fafafa;border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-size:0.9rem;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s;}
+.fill-input:focus{border-color:var(--gold-dim);}
+.fill-input.correct{border-color:var(--green);background:rgba(46,125,82,0.07);}
+.fill-input.wrong{border-color:var(--red);background:rgba(192,57,43,0.06);}
+.fill-check-btn{padding:9px 18px;background:var(--gold);border:none;border-radius:9px;color:#0f0e17;font-weight:600;font-size:0.84rem;cursor:pointer;font-family:'Inter',sans-serif;}
+.fill-check-btn:hover{opacity:0.85;}
+.fill-feedback{font-size:0.82rem;padding:10px 14px;border-radius:8px;margin-bottom:10px;display:none;line-height:1.5;}
+.fill-feedback.show{display:block;}
+.fill-feedback.correct-fb{background:rgba(46,125,82,0.08);border:1px solid rgba(46,125,82,0.25);color:var(--green);}
+.fill-feedback.wrong-fb{background:rgba(192,57,43,0.07);border:1px solid rgba(192,57,43,0.2);color:var(--red);}
+.fill-hint-btn{font-size:0.72rem;color:var(--muted);background:transparent;border:none;cursor:pointer;padding:0;text-decoration:underline;font-family:'Inter',sans-serif;}
+.fill-hint-btn:hover{color:var(--lavender);}
+.fill-hint-text{font-size:0.76rem;color:var(--lavender);margin-top:6px;display:none;}
+.fill-hint-text.show{display:block;}
+.fill-rule{font-size:0.75rem;color:var(--muted);background:rgba(108,95,199,0.05);border-left:2px solid var(--lavender);padding:8px 10px;border-radius:0 6px 6px 0;margin-top:8px;line-height:1.5;display:none;}
+.fill-rule.show{display:block;}
+.fill-nav{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:4px;}
+.fill-nav-btn{padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;}
+.fill-nav-btn:hover{border-color:var(--gold);color:var(--gold);}
+.fill-nav-btn.next-btn{background:var(--gold);border-color:var(--gold);color:#0f0e17;font-weight:600;}
+.fill-counter{font-size:0.75rem;color:var(--muted);}
+.fill-topic-filter{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;}
+.fill-topic-btn{padding:4px 10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;transition:all 0.2s;}
+.fill-topic-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.08);}
+
+/* GRAMMAR REFERENCE */
+.gram-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.gram-nav-btn{padding:5px 12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.75rem;cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;}
+.gram-nav-btn.active{border-color:var(--lavender);color:var(--lavender);background:rgba(108,95,199,0.1);}
+.gram-section{display:none;}
+.gram-section.show{display:block;}
+.gram-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold);margin-bottom:4px;}
+.gram-subtitle{font-size:0.75rem;color:var(--muted);margin-bottom:14px;}
+.gram-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:0.8rem;}
+.gram-table th{background:rgba(180,130,0,0.08);padding:8px 10px;text-align:left;color:var(--gold);border-bottom:1px solid var(--border);font-weight:600;}
+.gram-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top;}
+.gram-table tr:last-child td{border-bottom:none;}
+.gram-table td:first-child{color:var(--lavender);font-weight:500;}
+.gram-table .ex{color:var(--muted);font-style:italic;font-size:0.75rem;}
+.gram-card{background:#f4f2ff;border:1px solid #ddd8f8;border-radius:12px;padding:16px;margin-bottom:12px;}
+.gram-card-title{font-size:0.78rem;font-weight:600;color:var(--lavender);margin-bottom:8px;letter-spacing:0.04em;text-transform:uppercase;}
+.gram-formula{background:rgba(180,130,0,0.07);border-left:2px solid var(--gold);padding:8px 12px;border-radius:0 8px 8px 0;font-size:0.82rem;color:var(--text);margin-bottom:8px;font-family:monospace;}
+.gram-example{font-size:0.78rem;color:var(--muted);font-style:italic;line-height:1.6;}
+.gram-note{font-size:0.74rem;color:var(--lavender);background:rgba(108,95,199,0.06);border-radius:6px;padding:6px 10px;margin-top:6px;}
+.gram-section-sub{font-size:0.8rem;font-weight:600;color:var(--text);margin:12px 0 8px;border-bottom:1px solid var(--border);padding-bottom:4px;}
+.conj-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;font-size:0.78rem;}
+.conj-row{display:flex;gap:6px;align-items:baseline;}
+.conj-pro{color:var(--muted);min-width:60px;}
+.conj-verb{color:var(--text);}
+
+/* COMPLETE */
+.complete-screen{text-align:center;padding:32px 20px;display:none;}
+.complete-screen.show{display:block;}
+.complete-icon{font-size:2.5rem;margin-bottom:10px;}
+.complete-title{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--gold);margin-bottom:6px;}
+.complete-msg{color:var(--muted);font-size:0.84rem;margin-bottom:16px;}
+.restart-btn{padding:9px 22px;background:var(--gold);border:none;border-radius:22px;color:#0f0e17;font-weight:700;font-size:0.84rem;cursor:pointer;font-family:'Inter',sans-serif;}
+
+/* ADD SECTION */
+.add-section{background:#f4f4f8;border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:18px;}
+.add-title{font-size:0.78rem;font-weight:600;color:var(--gold);margin-bottom:10px;}
+.add-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px;}
+.add-input{flex:1;min-width:90px;padding:7px 10px;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:0.8rem;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s;}
+.add-input:focus{border-color:var(--gold-dim);}
+.add-input::placeholder{color:var(--muted);}
+select.add-input{max-width:140px;}
+.add-btn{padding:7px 14px;background:var(--gold);border:none;border-radius:7px;color:#0f0e17;font-weight:600;font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;}
+.import-btn{padding:7px 12px;background:transparent;border:1px dashed var(--gold-dim);border-radius:7px;color:var(--gold);font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;white-space:nowrap;}
+.import-btn:hover{border-color:var(--gold);background:rgba(201,168,76,0.08);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;align-items:center;justify-content:center;padding:14px;}
+.modal-overlay.show{display:flex;}
+.modal{background:#ffffff;border:1px solid var(--border);border-radius:14px;padding:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;}
+.modal-title{font-family:'Playfair Display',serif;font-size:1rem;color:var(--gold);margin-bottom:4px;}
+.modal-sub{font-size:0.74rem;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+.modal-label{font-size:0.72rem;color:var(--lavender);font-weight:600;margin-bottom:4px;display:block;letter-spacing:0.05em;text-transform:uppercase;}
+.modal-select{width:100%;padding:7px 10px;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:0.8rem;font-family:'Inter',sans-serif;outline:none;margin-bottom:10px;}
+.col-map-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px;}
+.col-map-item label{font-size:0.7rem;color:var(--muted);display:block;margin-bottom:2px;}
+.preview-table-wrap{overflow-x:auto;margin-bottom:10px;border-radius:7px;border:1px solid var(--border);}
+.preview-table{width:100%;border-collapse:collapse;font-size:0.74rem;}
+.preview-table th{background:var(--card);padding:6px 8px;text-align:left;color:var(--lavender);border-bottom:1px solid var(--border);}
+.preview-table td{padding:5px 8px;border-bottom:1px solid var(--border);color:var(--text);}
+.preview-table tr:last-child td{border-bottom:none;}
+.preview-count{font-size:0.73rem;color:var(--muted);margin-bottom:10px;}
+.modal-actions{display:flex;gap:7px;justify-content:flex-end;}
+.modal-cancel{padding:7px 14px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;}
+.modal-confirm{padding:7px 16px;background:var(--gold);border:none;border-radius:7px;color:#0f0e17;font-weight:600;font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;}
+.modal-confirm:disabled{opacity:0.4;cursor:default;}
+
+.hidden{display:none!important;}
+@keyframes shake{0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)}}
+.shake{animation:shake 0.3s ease;}
+@keyframes pop{0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)}}
+.pop{animation:pop 0.2s ease;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Học Pháp Ngữ <em>· Polly</em></div>
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tabFC" onclick="switchMode('flashcard')">🃏 Flashcard</button>
+    <button class="mode-tab" id="tabMT" onclick="switchMode('match')">🔗 Nối từ</button>
+    <button class="mode-tab" id="tabFI" onclick="switchMode('fill')">✏️ Điền vào chỗ trống</button>
+    <button class="mode-tab" id="tabGR" onclick="switchMode('grammar')">📐 Ngữ pháp</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- FILTER (only for flashcard/match) -->
+  <div id="vocabFilters" class="filter-section">
+    <div class="filter-row">
+      <span class="filter-label">📂 Chủ đề:</span>
+      <button class="filter-btn active" onclick="setCategory('all',this)">Tất cả</button>
+      <button class="filter-btn" onclick="setCategory('vie_quotidienne',this)">Đời sống</button>
+      <button class="filter-btn" onclick="setCategory('verbes',this)">Động từ</button>
+      <button class="filter-btn" onclick="setCategory('grammaire',this)">Ngữ pháp</button>
+      <button class="filter-btn" onclick="setCategory('pronoms',this)">Đại từ</button>
+      <span class="count-badge" id="countBadge"></span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">📖 Sheet:</span>
+      <button class="filter-btn sheet-btn active" onclick="setSheet('all',this)">Tất cả</button>
+      <button class="filter-btn sheet-btn" onclick="setSheet('1.Salutations',this)">Chào hỏi</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('2.Famille',this)">Gia đình</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('3.Nourriture',this)">Ẩm thực</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('4.Vetements',this)">Trang phục</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('5.Corps_Sante',this)">Cơ thể & Sức khoẻ</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('6.Professions',this)">Nghề nghiệp</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('7.Logement',this)">Nhà ở</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('8.Ville_Transport',this)">Thành phố & Giao thông</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('9.Temps_Meteo',this)">Thời gian & Thời tiết</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('10.Loisirs_Verbes',this)">Giải trí & Động từ</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('11.Pays',this)">Quốc gia</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('12.Description',this)">Mô tả</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('13.Quantites',this)">Số lượng</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('14.Evenements_Opinion',this)">Sự kiện & Ý kiến</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('15.Mots_utiles',this)">Từ hữu ích</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('16.Expressions_Verbes',this)">Cụm động từ</button>
+    <button class="filter-btn sheet-btn" onclick="setSheet('17.Expressions_Comm',this)">Giao tiếp</button>
+    
+    </div>
+  </div>
+
+  <div id="progressWrap">
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="progress-info"><span id="progressText">0 / 0</span><span id="scoreText"></span></div>
+  </div>
+
+  <!-- ===== FLASHCARD ===== -->
+  <div id="flashcardMode">
+    <div class="flashcard-scene" onclick="flipCard()">
+      <div class="flashcard-inner" id="cardInner">
+        <div class="flashcard-face flashcard-front" id="fcFront">
+          <div class="card-lang-tag">🇫🇷 Tiếng Pháp</div>
+          <div class="card-word" id="cardFR">—</div>
+          <div class="card-type" id="cardType"></div>
+          <div class="card-sheet" id="cardSheet"></div>
+        </div>
+        <div class="flashcard-face flashcard-back">
+          <div class="card-lang-tag">🇻🇳 Tiếng Việt</div>
+          <div class="card-word" id="cardVI">—</div>
+          <div class="card-example" id="cardExample"></div>
+        </div>
+      </div>
+    </div>
+    <p class="flip-hint">👆 Nhấn vào thẻ để lật · Space = lật · → = Đã nhớ · ← = Chưa nhớ</p>
+    <div class="fc-actions" id="fcActions">
+      <button class="fc-btn wrong" onclick="markCard(false)">✗ Chưa nhớ</button>
+      <button class="fc-btn correct" onclick="markCard(true)">✓ Đã nhớ</button>
+    </div>
+    <div class="complete-screen" id="fcComplete">
+      <div class="complete-icon">🎉</div>
+      <div class="complete-title">Bravo, Polly!</div>
+      <div class="complete-msg" id="fcMsg"></div>
+      <button class="restart-btn" onclick="startFlashcard()">Ôn lại từ đầu</button>
+    </div>
+  </div>
+
+  <!-- ===== MATCHING ===== -->
+  <div id="matchMode" class="hidden">
+    <div class="match-grid">
+      <div class="match-col" id="matchLeft"></div>
+      <div class="match-col" id="matchRight"></div>
+    </div>
+    <div class="match-result" id="matchResult">
+      <div class="match-score" id="matchScore"></div>
+      <div class="match-msg" id="matchMsg"></div>
+      <button class="restart-btn" onclick="startMatch()">Chơi lại 🔄</button>
+    </div>
+  </div>
+
+  <!-- ===== FILL IN THE BLANKS ===== -->
+  <div id="fillMode" class="hidden">
+    <div class="fill-topic-filter">
+      <span style="font-size:0.72rem;color:var(--muted);align-self:center;margin-right:4px;">Lọc:</span>
+      <button class="fill-topic-btn active" onclick="setFillFilter('all',this)">Tất cả</button>
+      <button class="fill-topic-btn" onclick="setFillFilter('pronominal',this)">Verbes pronominaux</button>
+      <button class="fill-topic-btn" onclick="setFillFilter('passe',this)">Passé composé</button>
+      <button class="fill-topic-btn" onclick="setFillFilter('futur',this)">Futur proche</button>
+      <button class="fill-topic-btn" onclick="setFillFilter('negation',this)">Négation</button>
+      <button class="fill-topic-btn" onclick="setFillFilter('cod',this)">COD / COI</button>
+      <button class="fill-topic-btn" onclick="setFillFilter('article',this)">Articles</button>
+      <button class="fill-topic-btn" onclick="setFillFilter('structure',this)">Structures</button>
+    </div>
+
+    <div class="fill-card" id="fillCard">
+      <div class="fill-topic" id="fillTopic"></div>
+      <div class="fill-sentence" id="fillSentence"></div>
+      <div class="fill-input-wrap">
+        <input class="fill-input" id="fillInput" placeholder="Điền vào đây..." onkeydown="if(event.key==='Enter')checkFill()"/>
+        <button class="fill-check-btn" onclick="checkFill()">Kiểm tra</button>
+      </div>
+      <div class="fill-feedback" id="fillFeedback"></div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px;">
+        <button class="fill-hint-btn" onclick="toggleHint()">💡 Gợi ý</button>
+        <button class="fill-hint-btn" onclick="toggleRule()">📖 Quy tắc</button>
+      </div>
+      <div class="fill-hint-text" id="fillHint"></div>
+      <div class="fill-rule" id="fillRule"></div>
+    </div>
+    <div class="fill-nav">
+      <button class="fill-nav-btn" onclick="fillNav(-1)">← Câu trước</button>
+      <span class="fill-counter" id="fillCounter"></span>
+      <button class="fill-nav-btn next-btn" id="fillNextBtn" onclick="fillNav(1)">Câu tiếp →</button>
+    </div>
+    <div class="complete-screen" id="fillComplete">
+      <div class="complete-icon">🏆</div>
+      <div class="complete-title">Xuất sắc!</div>
+      <div class="complete-msg" id="fillCompleteMsg"></div>
+      <button class="restart-btn" onclick="restartFill()">Làm lại từ đầu</button>
+    </div>
+  </div>
+
+  <!-- ===== GRAMMAR REFERENCE ===== -->
+  <div id="grammarMode" class="hidden">
+    <div class="gram-nav">
+      <button class="gram-nav-btn active" onclick="showGram('verbes',this)">🔄 Chia động từ</button>
+      <button class="gram-nav-btn" onclick="showGram('tenses',this)">⏱ Các thì</button>
+      <button class="gram-nav-btn" onclick="showGram('negation',this)">❌ Phủ định</button>
+      <button class="gram-nav-btn" onclick="showGram('cod',this)">🔗 COD / COI</button>
+      <button class="gram-nav-btn" onclick="showGram('articles',this)">📌 Mạo từ</button>
+      <button class="gram-nav-btn" onclick="showGram('structures',this)">🏗 Cấu trúc</button>
+      <button class="gram-nav-btn" onclick="showGram('adjectifs',this)">🎨 Tính từ</button>
+      <button class="gram-nav-btn" onclick="showGram('comparaison',this)">📊 So sánh</button>
+    </div>
+
+    <!-- VERBES -->
+    <div class="gram-section show" id="gram-verbes">
+      <div class="gram-title">Chia động từ bất quy tắc — Thì hiện tại</div>
+      <div class="gram-subtitle">Phải học thuộc. Nhóm 1 (-er): parler → je parle, tu parles, il parle, nous parlons, vous parlez, ils parlent</div>
+      <table class="gram-table">
+        <thead><tr><th>Ngôi</th><th>être (là/ở)</th><th>avoir (có)</th><th>aller (đi)</th><th>faire (làm)</th><th>vouloir (muốn)</th><th>pouvoir (có thể)</th></tr></thead>
+        <tbody>
+          <tr><td>Je/J'</td><td>suis</td><td>ai</td><td>vais</td><td>fais</td><td>veux</td><td>peux</td></tr>
+          <tr><td>Tu</td><td>es</td><td>as</td><td>vas</td><td>fais</td><td>veux</td><td>peux</td></tr>
+          <tr><td>Il/Elle</td><td>est</td><td>a</td><td>va</td><td>fait</td><td>veut</td><td>peut</td></tr>
+          <tr><td>Nous</td><td>sommes</td><td>avons</td><td>allons</td><td>faisons</td><td>voulons</td><td>pouvons</td></tr>
+          <tr><td>Vous</td><td>êtes</td><td>avez</td><td>allez</td><td>faites</td><td>voulez</td><td>pouvez</td></tr>
+          <tr><td>Ils/Elles</td><td>sont</td><td>ont</td><td>vont</td><td>font</td><td>veulent</td><td>peuvent</td></tr>
+        </tbody>
+      </table>
+      <table class="gram-table">
+        <thead><tr><th>Ngôi</th><th>venir (đến)</th><th>prendre (lấy)</th><th>savoir (biết)</th><th>devoir (phải)</th><th>dire (nói)</th></tr></thead>
+        <tbody>
+          <tr><td>Je</td><td>viens</td><td>prends</td><td>sais</td><td>dois</td><td>dis</td></tr>
+          <tr><td>Tu</td><td>viens</td><td>prends</td><td>sais</td><td>dois</td><td>dis</td></tr>
+          <tr><td>Il/Elle</td><td>vient</td><td>prend</td><td>sait</td><td>doit</td><td>dit</td></tr>
+          <tr><td>Nous</td><td>venons</td><td>prenons</td><td>savons</td><td>devons</td><td>disons</td></tr>
+          <tr><td>Vous</td><td>venez</td><td>prenez</td><td>savez</td><td>devez</td><td>dites</td></tr>
+          <tr><td>Ils</td><td>viennent</td><td>prennent</td><td>savent</td><td>doivent</td><td>disent</td></tr>
+        </tbody>
+      </table>
+      <div class="gram-card">
+        <div class="gram-card-title">Verbes pronominaux (động từ phản thân)</div>
+        <div class="gram-formula">Je me lève · Tu te lèves · Il/Elle se lève · Nous nous levons · Vous vous levez · Ils se lèvent</div>
+        <div class="gram-example">se réveiller (thức giấc) · se lever (thức dậy) · se laver (tắm) · se coucher (đi ngủ) · s'habiller (mặc đồ) · se maquiller (trang điểm)</div>
+        <div class="gram-note">⚠️ Phủ định: Je ne me lève pas (ne...pas bao quanh cả pronom + verbe)</div>
+      </div>
+    </div>
+
+    <!-- TENSES -->
+    <div class="gram-section" id="gram-tenses">
+      <div class="gram-title">Tổng hợp các thì</div>
+      <div class="gram-subtitle">A1–A2 cần nắm vững 4 thì chính + 2 cách diễn đạt</div>
+      <table class="gram-table">
+        <thead><tr><th>Thì</th><th>Công thức</th><th>Dùng khi</th><th>Ví dụ</th></tr></thead>
+        <tbody>
+          <tr><td>Présent</td><td>radical + terminaison</td><td>Hiện tại / thói quen</td><td class="ex">Je parle français.</td></tr>
+          <tr><td>Présent continu</td><td>être en train de + inf</td><td>Đang làm</td><td class="ex">Je suis en train de parler.</td></tr>
+          <tr><td>Futur proche</td><td>aller (présent) + inf</td><td>Sắp / dự định</td><td class="ex">Je vais manger.</td></tr>
+          <tr><td>Passé récent</td><td>venir de + inf</td><td>Vừa mới xảy ra</td><td class="ex">Je viens de manger.</td></tr>
+          <tr><td>Passé composé</td><td>avoir/être + participe passé</td><td>Đã làm (kết thúc)</td><td class="ex">J'ai parlé. Elle est allée.</td></tr>
+          <tr><td>Imparfait</td><td>radical nous + ais/ait/ions…</td><td>Thói quen trong quá khứ</td><td class="ex">Je parlais anglais.</td></tr>
+          <tr><td>Futur simple</td><td>infinitif + ai/as/a/ons/ez/ont</td><td>Tương lai xa hơn</td><td class="ex">Je parlerai demain.</td></tr>
+        </tbody>
+      </table>
+      <div class="gram-card">
+        <div class="gram-card-title">Passé composé — Participes passés irréguliers</div>
+        <div class="gram-formula">avoir → eu · être → été · aller → allé · faire → fait · voir → vu · prendre → pris · dire → dit · écrire → écrit · lire → lu · boire → bu · vouloir → voulu · pouvoir → pu · savoir → su · venir → venu · mettre → mis · comprendre → compris</div>
+        <div class="gram-note">⚠️ Verbes avec ÊTRE: aller, venir, partir, arriver, entrer, sortir, monter, descendre, naître, mourir, rester, tomber, retourner + tous les verbes pronominaux</div>
+      </div>
+    </div>
+
+    <!-- NEGATION -->
+    <div class="gram-section" id="gram-negation">
+      <div class="gram-title">La négation — Phủ định</div>
+      <div class="gram-subtitle">Tất cả các dạng phủ định quan trọng</div>
+      <table class="gram-table">
+        <thead><tr><th>Cấu trúc</th><th>Nghĩa</th><th>Ví dụ</th></tr></thead>
+        <tbody>
+          <tr><td>ne ... pas</td><td>không</td><td class="ex">Je ne parle pas anglais.</td></tr>
+          <tr><td>ne ... jamais</td><td>không bao giờ</td><td class="ex">Je ne mange jamais le matin.</td></tr>
+          <tr><td>ne ... plus</td><td>không còn nữa</td><td class="ex">Je ne travaille plus ici.</td></tr>
+          <tr><td>ne ... rien</td><td>không gì cả</td><td class="ex">Je ne vois rien.</td></tr>
+          <tr><td>ne ... personne</td><td>không ai cả</td><td class="ex">Je ne connais personne.</td></tr>
+          <tr><td>ne ... que</td><td>chỉ... mà thôi</td><td class="ex">Je ne parle que français.</td></tr>
+        </tbody>
+      </table>
+      <div class="gram-card">
+        <div class="gram-card-title">⚠️ Phủ định với articles</div>
+        <div class="gram-formula">du / de la / un / une / des → DE (hoặc D' trước nguyên âm)</div>
+        <div class="gram-example">Il fait du sport → Il ne fait pas de sport<br>J'ai une voiture → Je n'ai pas de voiture<br>Il boit de l'eau → Il ne boit pas d'eau</div>
+        <div class="gram-note">Exception: avec le verbe ÊTRE → un/une/des ne changent pas à la négation<br>C'est un médecin → Ce n'est pas un médecin ✓</div>
+      </div>
+    </div>
+
+    <!-- COD/COI -->
+    <div class="gram-section" id="gram-cod">
+      <div class="gram-title">Pronoms COD / COI</div>
+      <div class="gram-subtitle">Đại từ bổ ngữ — đứng TRƯỚC động từ</div>
+      <table class="gram-table">
+        <thead><tr><th>Ngôi</th><th>COD (trực tiếp)</th><th>COI (gián tiếp à)</th><th>Ví dụ COD</th><th>Ví dụ COI</th></tr></thead>
+        <tbody>
+          <tr><td>1sg</td><td>me / m'</td><td>me / m'</td><td class="ex">Il me voit.</td><td class="ex">Il me parle.</td></tr>
+          <tr><td>2sg</td><td>te / t'</td><td>te / t'</td><td class="ex">Il te voit.</td><td class="ex">Il te parle.</td></tr>
+          <tr><td>3sg masc</td><td>le / l'</td><td>lui</td><td class="ex">Je le connais.</td><td class="ex">Je lui écris.</td></tr>
+          <tr><td>3sg fém</td><td>la / l'</td><td>lui</td><td class="ex">Je la vois.</td><td class="ex">Je lui téléphone.</td></tr>
+          <tr><td>1pl</td><td>nous</td><td>nous</td><td class="ex">Il nous voit.</td><td class="ex">Il nous parle.</td></tr>
+          <tr><td>2pl</td><td>vous</td><td>vous</td><td class="ex">Il vous voit.</td><td class="ex">Il vous écrit.</td></tr>
+          <tr><td>3pl</td><td>les</td><td>leur</td><td class="ex">Je les connais.</td><td class="ex">Je leur parle.</td></tr>
+        </tbody>
+      </table>
+      <table class="gram-table">
+        <thead><tr><th>Pronom</th><th>Dùng khi</th><th>Ví dụ</th></tr></thead>
+        <tbody>
+          <tr><td>EN</td><td>Thay cho: de + chose / số lượng</td><td class="ex">J'ai du café → J'en ai. · J'en veux deux.</td></tr>
+          <tr><td>Y</td><td>Thay cho: à/en/dans + lieu</td><td class="ex">Je vais à Paris → J'y vais.</td></tr>
+        </tbody>
+      </table>
+      <div class="gram-note">⚠️ Phủ định: Je ne le vois pas. (COD reste entre ne et verbe)</div>
+    </div>
+
+    <!-- ARTICLES -->
+    <div class="gram-section" id="gram-articles">
+      <div class="gram-title">Articles &amp; Prépositions</div>
+      <table class="gram-table">
+        <thead><tr><th>Loại</th><th>Masc. sg</th><th>Fém. sg</th><th>Devant voyelle</th><th>Pluriel</th><th>Dùng khi</th></tr></thead>
+        <tbody>
+          <tr><td>Défini</td><td>le</td><td>la</td><td>l'</td><td>les</td><td>Xác định, hoặc cả loại: J'aime le café.</td></tr>
+          <tr><td>Indéfini</td><td>un</td><td>une</td><td>un/une</td><td>des</td><td>Bất kỳ, lần đầu đề cập: Je bois un café.</td></tr>
+          <tr><td>Partitif</td><td>du</td><td>de la</td><td>de l'</td><td>des</td><td>Một phần, không đếm được: Je mange du pain.</td></tr>
+        </tbody>
+      </table>
+      <div class="gram-card">
+        <div class="gram-card-title">Prépositions de lieu</div>
+        <div class="gram-formula">à + ville: Je suis à Paris · en + pays féminin: en France · au + pays masculin: au Vietnam · aux + pluriel: aux États-Unis</div>
+        <div class="gram-example">venir DE: Je viens du Vietnam / de France / des États-Unis<br>habiter À: J'habite à Hô-Chi-Minh-Ville</div>
+      </div>
+    </div>
+
+    <!-- STRUCTURES -->
+    <div class="gram-section" id="gram-structures">
+      <div class="gram-title">Cấu trúc câu quan trọng</div>
+      <table class="gram-table">
+        <thead><tr><th>Cấu trúc</th><th>Nghĩa</th><th>Ví dụ</th></tr></thead>
+        <tbody>
+          <tr><td>Il faut + inf</td><td>Cần phải (không chia ngôi)</td><td class="ex">Il faut manger. Il ne faut pas fumer.</td></tr>
+          <tr><td>Il y a</td><td>Có (tồn tại)</td><td class="ex">Il y a trois chambres. Il n'y a pas de piscine.</td></tr>
+          <tr><td>C'est / Ce sont</td><td>Đây là / Đó là</td><td class="ex">C'est mon ami. Ce sont mes parents.</td></tr>
+          <tr><td>avoir envie de + inf</td><td>muốn</td><td class="ex">J'ai envie de dormir.</td></tr>
+          <tr><td>avoir besoin de + inf</td><td>cần</td><td class="ex">J'ai besoin de partir.</td></tr>
+          <tr><td>avoir peur de + inf</td><td>sợ</td><td class="ex">Elle a peur de parler.</td></tr>
+          <tr><td>être en train de + inf</td><td>đang làm</td><td class="ex">Je suis en train de travailler.</td></tr>
+          <tr><td>être prêt(e) à + inf</td><td>sẵn sàng</td><td class="ex">Je suis prête à partir.</td></tr>
+          <tr><td>commencer à + inf</td><td>bắt đầu</td><td class="ex">Elle commence à parler.</td></tr>
+          <tr><td>arrêter de + inf</td><td>dừng lại</td><td class="ex">Il arrête de fumer.</td></tr>
+          <tr><td>essayer de + inf</td><td>cố gắng</td><td class="ex">J'essaie de comprendre.</td></tr>
+          <tr><td>décider de + inf</td><td>quyết định</td><td class="ex">Elle décide de partir.</td></tr>
+          <tr><td>réussir à + inf</td><td>thành công</td><td class="ex">J'ai réussi à finir.</td></tr>
+          <tr><td>pouvoir / vouloir / devoir + inf</td><td>có thể / muốn / phải</td><td class="ex">Je peux venir. Tu dois travailler.</td></tr>
+        </tbody>
+      </table>
+      <div class="gram-card">
+        <div class="gram-card-title">Mots interrogatifs</div>
+        <div class="gram-formula">Où = đâu · Quand = khi nào · Comment = thế nào · Pourquoi = tại sao · Combien = bao nhiêu · Qui = ai · Que/Qu'est-ce que = cái gì</div>
+        <div class="gram-example">Où est-ce que tu habites ? · Quand arrives-tu ? · Comment vas-tu ? · Pourquoi tu pleures ? · Combien ça coûte ?</div>
+      </div>
+    </div>
+
+    <!-- ADJECTIFS -->
+    <div class="gram-section" id="gram-adjectifs">
+      <div class="gram-title">Accord des adjectifs</div>
+      <div class="gram-subtitle">Tính từ phải hòa hợp về giống và số với danh từ</div>
+      <table class="gram-table">
+        <thead><tr><th>Đuôi Masc.</th><th>Đuôi Fém.</th><th>Ví dụ</th><th>Nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td>-e</td><td>-e (không đổi)</td><td>simple → simple</td><td>đơn giản</td></tr>
+          <tr><td>(phụ âm)</td><td>+ e</td><td>grand → grande</td><td>cao</td></tr>
+          <tr><td>-f</td><td>-ve</td><td>sportif → sportive</td><td>năng động</td></tr>
+          <tr><td>-eux</td><td>-euse</td><td>heureux → heureuse</td><td>hạnh phúc</td></tr>
+          <tr><td>-eur</td><td>-euse</td><td>rêveur → rêveuse</td><td>mơ mộng</td></tr>
+          <tr><td>-teur</td><td>-trice</td><td>calculateur → calculatrice</td><td>tính toán</td></tr>
+          <tr><td>-en/-on/-el</td><td>nhân đôi + e</td><td>mignon → mignonne</td><td>dễ thương</td></tr>
+          <tr><td colspan="4" style="color:var(--lavender);font-size:0.72rem;padding-top:8px;">⚠️ Đặc biệt: beau → belle · vieux → vieille · nouveau → nouvelle · gros → grosse · gentil → gentille</td></tr>
+        </tbody>
+      </table>
+      <div class="gram-card">
+        <div class="gram-card-title">Pluriel des adjectifs</div>
+        <div class="gram-formula">Thông thường → thêm -S · Kết thúc -s hoặc -x → không đổi</div>
+        <div class="gram-example">grand → grands · grande → grandes · heureux → heureux (không đổi) · beau → beaux</div>
+      </div>
+    </div>
+
+    <!-- COMPARAISON -->
+    <div class="gram-section" id="gram-comparaison">
+      <div class="gram-title">La comparaison — So sánh</div>
+      <table class="gram-table">
+        <thead><tr><th>Loại</th><th>Hơn</th><th>Bằng</th><th>Kém hơn</th><th>Ví dụ</th></tr></thead>
+        <tbody>
+          <tr><td>Tính từ</td><td>plus + adj + que</td><td>aussi + adj + que</td><td>moins + adj + que</td><td class="ex">Il est plus grand que moi.</td></tr>
+          <tr><td>Trạng từ</td><td>plus + adv + que</td><td>aussi + adv + que</td><td>moins + adv + que</td><td class="ex">Il parle plus vite que moi.</td></tr>
+          <tr><td>Danh từ</td><td>plus de + n + que</td><td>autant de + n + que</td><td>moins de + n + que</td><td class="ex">J'ai plus de livres que toi.</td></tr>
+          <tr><td>Động từ</td><td>verbe + plus que</td><td>verbe + autant que</td><td>verbe + moins que</td><td class="ex">Il travaille plus que moi.</td></tr>
+        </tbody>
+      </table>
+      <div class="gram-card">
+        <div class="gram-card-title">Superlatif (cấp tuyệt đối)</div>
+        <div class="gram-formula">le / la / les + plus/moins + adj · ⚠️ bon → meilleur (tốt hơn) / le meilleur (tốt nhất) · mauvais → pire / le pire</div>
+        <div class="gram-example">C'est le plus grand bâtiment. (Đây là tòa nhà cao nhất.)<br>Elle est la meilleure étudiante. (Cô ấy là học sinh giỏi nhất.)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD + IMPORT -->
+  <div class="add-section" id="addSection">
+    <div class="add-title">➕ Thêm từ của bạn</div>
+    <div class="add-row">
+      <input class="add-input" id="newFR" placeholder="Tiếng Pháp"/>
+      <input class="add-input" id="newVI" placeholder="Tiếng Việt"/>
+      <input class="add-input" id="newType" placeholder="Loại từ" style="max-width:80px"/>
+    </div>
+    <div class="add-row">
+      <select class="add-input" id="newCat">
+        <option value="vie_quotidienne">Đời sống</option>
+        <option value="pronoms">Đại từ</option>
+        <option value="verbes">Động từ</option>
+        <option value="grammaire">Ngữ pháp</option>
+      </select>
+      <input class="add-input" id="newEx" placeholder="Ví dụ câu (tuỳ chọn)"/>
+      <button class="add-btn" id="addBtn" onclick="addCard()">Thêm từ</button>
+    </div>
+    <div class="add-row" style="margin-bottom:0;margin-top:3px;">
+      <button class="import-btn" onclick="document.getElementById('xlsxFile').click()">📥 Import từ Excel (.xlsx)</button>
+      <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none" onchange="onFileSelected(event)"/>
+      <span id="importStatus" style="font-size:0.74rem;color:var(--muted);align-self:center;"></span>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <div class="modal-title">📥 Import từ Excel</div>
+    <div class="modal-sub">Chọn sheet và ghép cột tương ứng. Preview 5 dòng đầu để kiểm tra.</div>
+    <label class="modal-label">Chọn sheet</label>
+    <select class="modal-select" id="sheetSelect" onchange="onSheetChange()"></select>
+    <div class="col-map-grid">
+      <div class="col-map-item"><label>Cột Tiếng Pháp 🇫🇷</label><select class="modal-select" id="colFR" style="margin-bottom:0" onchange="renderPreview()"></select></div>
+      <div class="col-map-item"><label>Cột Tiếng Việt 🇻🇳</label><select class="modal-select" id="colVI" style="margin-bottom:0" onchange="renderPreview()"></select></div>
+      <div class="col-map-item"><label>Loại từ (tuỳ chọn)</label><select class="modal-select" id="colType" style="margin-bottom:0" onchange="renderPreview()"></select></div>
+      <div class="col-map-item"><label>Ví dụ câu (tuỳ chọn)</label><select class="modal-select" id="colEx" style="margin-bottom:0" onchange="renderPreview()"></select></div>
+    </div>
+    <div class="preview-count" id="previewCount"></div>
+    <div class="preview-table-wrap"><table class="preview-table" id="previewTable"></table></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Huỷ</button>
+      <button class="modal-confirm" id="confirmImport" onclick="doImport()">Import tất cả</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const builtinCards = [{"fr": "Bonjour", "vi": "Xin chào (ban ngày)", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Bonsoir", "vi": "Chào buổi tối", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Bonne nuit", "vi": "Chúc ngủ ngon", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Salut", "vi": "Chào (thân mật)", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Au revoir", "vi": "Tạm biệt", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "À bientôt", "vi": "Hẹn gặp lại", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "À demain", "vi": "Hẹn ngày mai", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "À tout à l'heure", "vi": "Lát nữa gặp", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Merci (beaucoup)", "vi": "Cảm ơn (rất nhiều)", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "De rien", "vi": "Không có gì", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Je vous en prie", "vi": "Không có chi (lịch sự)", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "S'il vous plaît", "vi": "Làm ơn (lịch sự)", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "S'il te plaît", "vi": "Làm ơn (thân mật)", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Pardon / Excusez-moi", "vi": "Xin lỗi / xin phép", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Désolé(e)", "vi": "Tôi xin lỗi", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Enchanté(e)", "vi": "Rất vui được gặp", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Comment allez-vous ?", "vi": "Bạn khỏe không? (lịch sự)", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Comment ça va ?", "vi": "Khỏe không? (thân mật)", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Ça va bien", "vi": "Tôi khỏe", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Comment vous appelez-vous ?", "vi": "Bạn tên gì?", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Je m'appelle...", "vi": "Tôi tên là...", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Oui / Non", "vi": "Có / Không", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Peut-être", "vi": "Có lẽ", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "D'accord", "vi": "Đồng ý", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Bienvenue", "vi": "Chào mừng", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Bof !", "vi": "Ờm (không hào hứng)", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Pas trop", "vi": "Không lắm", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "énervant(e)", "vi": "bực mình, khó chịu", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "surtout", "vi": "nhất là", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "Pourquoi pas ?", "vi": "Sao không? (đồng ý)", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "avec plaisir", "vi": "rất vui lòng", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "1.Salutations", "sheetLabel": "Chào hỏi"}, {"fr": "le père / papa", "vi": "bố", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "la mère / maman", "vi": "mẹ", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "les parents", "vi": "bố mẹ", "type": "masculin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "le frère", "vi": "anh/em trai", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "la sœur", "vi": "chị/em gái", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "le fils", "vi": "con trai", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "la fille", "vi": "con gái / cô gái", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "l'enfant", "vi": "đứa trẻ", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "le bébé", "vi": "em bé", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "les grands-parents", "vi": "ông bà", "type": "masculin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "le grand-père", "vi": "ông", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "la grand-mère", "vi": "bà", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "le petit-fils", "vi": "cháu trai", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "la petite-fille", "vi": "cháu gái", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "le mari / l'époux", "vi": "chồng", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "la femme / l'épouse", "vi": "vợ", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "l'oncle", "vi": "chú/bác/cậu", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "la tante", "vi": "cô/dì/thím", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "le cousin / la cousine", "vi": "anh/chị em họ", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "le neveu", "vi": "cháu trai (của cô/chú)", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "la nièce", "vi": "cháu gái (của cô/chú)", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "le beau-père", "vi": "bố chồng/vợ", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "la belle-mère", "vi": "mẹ chồng/vợ", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "le voisin / la voisine", "vi": "hàng xóm", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "célibataire", "vi": "độc thân", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "marié(e)", "vi": "đã kết hôn", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "divorcé(e)", "vi": "đã ly hôn", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "2.Famille", "sheetLabel": "Gia đình"}, {"fr": "le pain", "vi": "bánh mì", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la baguette", "vi": "bánh mì baguette", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le croissant", "vi": "bánh sừng bò", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le fromage", "vi": "phô mai", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le beurre", "vi": "bơ", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "l'œuf / les œufs", "vi": "trứng", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la viande", "vi": "thịt", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le bœuf", "vi": "thịt bò", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le poulet", "vi": "thịt gà", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le porc", "vi": "thịt heo", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le poisson", "vi": "cá", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "les fruits de mer", "vi": "hải sản", "type": "masculin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le riz", "vi": "cơm/gạo", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "les pâtes", "vi": "mì ống", "type": "féminin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "les fruits", "vi": "trái cây", "type": "masculin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la pomme", "vi": "táo", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la banane", "vi": "chuối", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "l'orange", "vi": "cam", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la fraise", "vi": "dâu tây", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "les légumes", "vi": "rau củ", "type": "masculin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la tomate", "vi": "cà chua", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la carotte", "vi": "cà rốt", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la salade", "vi": "rau xà lách", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la pomme de terre", "vi": "khoai tây", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le sel / le poivre", "vi": "muối / tiêu", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le sucre", "vi": "đường", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "l'eau", "vi": "nước", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le lait", "vi": "sữa", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le café", "vi": "cà phê", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le thé", "vi": "trà", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le jus (de fruit)", "vi": "nước ép", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le vin", "vi": "rượu vang", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la bière", "vi": "bia", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le gâteau", "vi": "bánh ngọt", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le chocolat", "vi": "sô-cô-la", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la glace", "vi": "kem", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le repas", "vi": "bữa ăn", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le petit-déjeuner", "vi": "bữa sáng", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le déjeuner", "vi": "bữa trưa", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le dîner", "vi": "bữa tối", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la raclette", "vi": "món raclette (phô mai nướng)", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la fondue", "vi": "lẩu phô mai/sô-cô-la", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le carpaccio", "vi": "thịt/cá thái lát mỏng", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la sauce", "vi": "nước sốt", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le gratin", "vi": "món nướng phủ phô mai", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "l'ingrédient", "vi": "nguyên liệu", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "la recette", "vi": "công thức nấu ăn", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "l'entrée", "vi": "món khai vị", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le plat", "vi": "món chính", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "le dessert", "vi": "món tráng miệng", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "3.Nourriture", "sheetLabel": "Ẩm thực"}, {"fr": "les vêtements", "vi": "quần áo", "type": "masculin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "le pantalon", "vi": "quần dài", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "le jean", "vi": "quần jean", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "le short", "vi": "quần short", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "la jupe", "vi": "váy ngắn", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "la robe", "vi": "đầm", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "la chemise", "vi": "áo sơ mi", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "le tee-shirt", "vi": "áo thun", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "le pull", "vi": "áo len", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "la veste", "vi": "áo khoác", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "le manteau", "vi": "áo măng tô", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "les chaussures", "vi": "giày", "type": "féminin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "les baskets", "vi": "giày thể thao", "type": "féminin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "les bottes", "vi": "bốt", "type": "féminin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "les chaussettes", "vi": "vớ/tất", "type": "féminin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "le chapeau", "vi": "mũ", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "la casquette", "vi": "mũ lưỡi trai", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "l'écharpe", "vi": "khăn quàng", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "les gants", "vi": "găng tay", "type": "masculin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "la cravate", "vi": "cà vạt", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "la ceinture", "vi": "thắt lưng", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "le sac (à main)", "vi": "túi (xách)", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "les lunettes", "vi": "kính", "type": "féminin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "la montre", "vi": "đồng hồ", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "les bijoux", "vi": "trang sức", "type": "masculin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "porter", "vi": "mặc/đeo (trạng thái)", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "mettre", "vi": "mặc/đeo vào (hành động)", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "4.Vetements", "sheetLabel": "Trang phục"}, {"fr": "le corps", "vi": "cơ thể", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "la tête", "vi": "đầu", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le visage", "vi": "khuôn mặt", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "les cheveux", "vi": "tóc", "type": "masculin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "l'œil / les yeux", "vi": "mắt", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le nez", "vi": "mũi", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "la bouche", "vi": "miệng", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "la dent / les dents", "vi": "răng", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "l'oreille", "vi": "tai", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le cou", "vi": "cổ", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "l'épaule", "vi": "vai", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le bras", "vi": "cánh tay", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "la main", "vi": "bàn tay", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le doigt", "vi": "ngón tay", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "la poitrine", "vi": "ngực", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le dos", "vi": "lưng", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le ventre", "vi": "bụng", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "la jambe", "vi": "chân", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le genou", "vi": "đầu gối", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le pied", "vi": "bàn chân", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le cœur", "vi": "tim", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "avoir mal à", "vi": "đau ở...", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "être malade", "vi": "bị bệnh", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "la fièvre", "vi": "sốt", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le rhume", "vi": "cảm lạnh", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "la grippe", "vi": "cúm", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "la toux", "vi": "ho", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le médecin", "vi": "bác sĩ", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le dentiste", "vi": "nha sĩ", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "la pharmacie", "vi": "nhà thuốc", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le médicament", "vi": "thuốc", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "l'ordonnance", "vi": "đơn thuốc", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "l'hôpital", "vi": "bệnh viện", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "se brosser les dents", "vi": "đánh răng", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "se laver les cheveux", "vi": "gội đầu", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "se casser le bras", "vi": "gãy tay", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "se blesser", "vi": "bị thương", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "la carte vitale", "vi": "thẻ y tế", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "prendre rendez-vous", "vi": "đặt lịch hẹn", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "5.Corps_Sante", "sheetLabel": "Cơ thể & Sức khoẻ"}, {"fr": "le médecin", "vi": "bác sĩ", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "l'infirmier / l'infirmière", "vi": "y tá", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le professeur", "vi": "giáo viên", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "l'enseignant(e)", "vi": "giáo viên", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "l'étudiant(e)", "vi": "sinh viên", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "l'ingénieur", "vi": "kỹ sư", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "l'avocat(e)", "vi": "luật sư", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le/la journaliste", "vi": "nhà báo", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "l'artiste", "vi": "nghệ sĩ", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "l'acteur / l'actrice", "vi": "diễn viên", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le chanteur / la chanteuse", "vi": "ca sĩ", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le/la secrétaire", "vi": "thư ký", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le directeur / la directrice", "vi": "giám đốc", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le vendeur / la vendeuse", "vi": "nhân viên bán hàng", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le serveur / la serveuse", "vi": "nhân viên phục vụ", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le cuisinier / la cuisinière", "vi": "đầu bếp", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le chef", "vi": "bếp trưởng", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le boulanger / la boulangère", "vi": "thợ làm bánh mì", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le coiffeur / la coiffeuse", "vi": "thợ làm tóc", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le chauffeur", "vi": "tài xế", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le pharmacien / la pharmacienne", "vi": "dược sĩ", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le mécanicien / la mécanicienne", "vi": "thợ cơ khí", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le policier / la policière", "vi": "cảnh sát", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le pompier", "vi": "lính cứu hỏa", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "l'agriculteur / l'agricultrice", "vi": "nông dân", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le commerçant(e)", "vi": "người buôn bán", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "l'écrivain", "vi": "nhà văn", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le/la photographe", "vi": "nhiếp ảnh gia", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le/la dentiste", "vi": "nha sĩ", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le/la pilote", "vi": "phi công", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le musicien / la musicienne", "vi": "nhạc công", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "le facteur / la factrice", "vi": "người đưa thư", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "être au chômage", "vi": "thất nghiệp", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "travailler", "vi": "làm việc", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "6.Professions", "sheetLabel": "Nghề nghiệp"}, {"fr": "la maison", "vi": "nhà", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "l'appartement", "vi": "căn hộ", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le studio", "vi": "phòng studio", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "l'immeuble", "vi": "tòa nhà", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la pièce", "vi": "phòng (đếm)", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le salon", "vi": "phòng khách", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la chambre", "vi": "phòng ngủ", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la cuisine", "vi": "nhà bếp", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la salle de bains", "vi": "phòng tắm", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "les toilettes / les WC", "vi": "nhà vệ sinh", "type": "féminin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la salle à manger", "vi": "phòng ăn", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le bureau", "vi": "phòng làm việc", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le couloir", "vi": "hành lang", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "l'entrée", "vi": "lối vào", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le balcon", "vi": "ban công", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le jardin", "vi": "vườn", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le garage", "vi": "nhà để xe", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "l'escalier", "vi": "cầu thang", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "l'ascenseur", "vi": "thang máy", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la porte", "vi": "cửa", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la fenêtre", "vi": "cửa sổ", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le mur", "vi": "tường", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le sol", "vi": "sàn nhà", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le lit", "vi": "giường", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la table", "vi": "bàn", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la chaise", "vi": "ghế", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le canapé", "vi": "ghế sô-pha", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le fauteuil", "vi": "ghế bành", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "l'armoire", "vi": "tủ quần áo", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "l'étagère", "vi": "kệ", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le frigo / réfrigérateur", "vi": "tủ lạnh", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la télévision", "vi": "tivi", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le four", "vi": "lò nướng", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la douche", "vi": "vòi sen", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "déménager", "vi": "chuyển nhà", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "louer", "vi": "thuê", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le congélateur", "vi": "tủ đông", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "ranger", "vi": "sắp xếp, cất gọn", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la boîte", "vi": "cái hộp", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "cohabiter", "vi": "sống chung", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "le/la colocataire", "vi": "bạn cùng phòng", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la cohabitation", "vi": "việc sống chung", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "7.Logement", "sheetLabel": "Nhà ở"}, {"fr": "la ville", "vi": "thành phố", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le quartier", "vi": "khu phố", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "la rue", "vi": "đường phố", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "l'avenue", "vi": "đại lộ", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "la place", "vi": "quảng trường", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "la banque", "vi": "ngân hàng", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "la poste", "vi": "bưu điện", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le supermarché", "vi": "siêu thị", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le marché", "vi": "chợ", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "la pharmacie", "vi": "nhà thuốc", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "la boulangerie", "vi": "tiệm bánh mì", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le restaurant", "vi": "nhà hàng", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le café", "vi": "quán cà phê", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "l'hôtel", "vi": "khách sạn", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "l'hôpital", "vi": "bệnh viện", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "l'école", "vi": "trường học", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "l'université", "vi": "đại học", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "la bibliothèque", "vi": "thư viện", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le musée", "vi": "bảo tàng", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le cinéma", "vi": "rạp chiếu phim", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le parc", "vi": "công viên", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "l'église", "vi": "nhà thờ", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "la gare", "vi": "nhà ga", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "l'aéroport", "vi": "sân bay", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "la voiture", "vi": "ô tô", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le bus", "vi": "xe buýt", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le métro", "vi": "tàu điện ngầm", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le train", "vi": "tàu hỏa", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le tramway", "vi": "tàu điện", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "l'avion", "vi": "máy bay", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le vélo", "vi": "xe đạp", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "la moto", "vi": "xe máy", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le taxi", "vi": "taxi", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le bateau", "vi": "tàu thuyền", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "à pied", "vi": "đi bộ", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "le billet / le ticket", "vi": "vé", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "8.Ville_Transport", "sheetLabel": "Thành phố & Giao thông"}, {"fr": "lundi", "vi": "thứ Hai", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "mardi", "vi": "thứ Ba", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "mercredi", "vi": "thứ Tư", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "jeudi", "vi": "thứ Năm", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "vendredi", "vi": "thứ Sáu", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "samedi", "vi": "thứ Bảy", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "dimanche", "vi": "Chủ nhật", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "janvier", "vi": "tháng 1", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "février", "vi": "tháng 2", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "mars", "vi": "tháng 3", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "avril", "vi": "tháng 4", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "mai", "vi": "tháng 5", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "juin", "vi": "tháng 6", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "juillet", "vi": "tháng 7", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "août", "vi": "tháng 8", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "septembre", "vi": "tháng 9", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "octobre", "vi": "tháng 10", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "novembre", "vi": "tháng 11", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "décembre", "vi": "tháng 12", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "le printemps", "vi": "mùa xuân", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "l'été", "vi": "mùa hè", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "l'automne", "vi": "mùa thu", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "l'hiver", "vi": "mùa đông", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "aujourd'hui", "vi": "hôm nay", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "hier", "vi": "hôm qua", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "demain", "vi": "ngày mai", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "maintenant", "vi": "bây giờ", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "le matin", "vi": "buổi sáng", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "l'après-midi", "vi": "buổi chiều", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "le soir", "vi": "buổi tối", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "la nuit", "vi": "ban đêm", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "Il fait beau", "vi": "Trời đẹp", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "Il fait chaud", "vi": "Trời nóng", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "Il fait froid", "vi": "Trời lạnh", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "Il pleut", "vi": "Trời mưa", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "Il neige", "vi": "Trời tuyết", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "Il y a du soleil", "vi": "Trời nắng", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "Il y a du vent", "vi": "Có gió", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "le nuage", "vi": "mây", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "9.Temps_Meteo", "sheetLabel": "Thời gian & Thời tiết"}, {"fr": "le cinéma", "vi": "rạp chiếu phim", "type": "masculin", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "la musique", "vi": "âm nhạc", "type": "féminin", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "le sport", "vi": "thể thao", "type": "masculin", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "le football", "vi": "bóng đá", "type": "masculin", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "le tennis", "vi": "quần vợt", "type": "masculin", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "la natation", "vi": "bơi lội", "type": "féminin", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "la lecture", "vi": "đọc sách", "type": "féminin", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "le voyage", "vi": "du lịch", "type": "masculin", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "la danse", "vi": "khiêu vũ", "type": "féminin", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "la photo", "vi": "chụp ảnh", "type": "féminin", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "le jeu vidéo", "vi": "trò chơi điện tử", "type": "masculin", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "la fête", "vi": "bữa tiệc", "type": "féminin", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "être", "vi": "thì, là, ở", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "avoir", "vi": "có", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "aller", "vi": "đi", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "faire", "vi": "làm", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "venir", "vi": "đến", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "pouvoir", "vi": "có thể", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "vouloir", "vi": "muốn", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "devoir", "vi": "phải", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "savoir", "vi": "biết (kiến thức)", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "connaître", "vi": "biết (quen)", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "prendre", "vi": "lấy, dùng", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "manger", "vi": "ăn", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "boire", "vi": "uống", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "parler", "vi": "nói", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "écouter", "vi": "nghe", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "regarder", "vi": "nhìn, xem", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "lire", "vi": "đọc", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "écrire", "vi": "viết", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "habiter", "vi": "sống ở", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "travailler", "vi": "làm việc", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "acheter", "vi": "mua", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "aimer", "vi": "thích, yêu", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "adorer", "vi": "rất thích", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "détester", "vi": "ghét", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "préférer", "vi": "thích hơn", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "partir", "vi": "rời đi", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "arriver", "vi": "đến nơi", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "dormir", "vi": "ngủ", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "cuisiner", "vi": "nấu ăn", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "apporter", "vi": "mang đến", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "choisir", "vi": "chọn", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "s'inscrire", "vi": "đăng ký", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "calculer", "vi": "tính toán", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "contribuer", "vi": "đóng góp", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "organiser", "vi": "tổ chức", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "se réveiller", "vi": "thức dậy", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "se marier", "vi": "kết hôn", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "se reposer", "vi": "nghỉ ngơi", "type": "verbe", "cat": "verbes", "ex": "", "sheet": "10.Loisirs_Verbes", "sheetLabel": "Giải trí & Động từ"}, {"fr": "le Vietnam", "vi": "Việt Nam", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "vietnamien(ne)", "vi": "người Việt", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "la France", "vi": "Pháp", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "français(e)", "vi": "người Pháp", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "la Chine", "vi": "Trung Quốc", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "chinois(e)", "vi": "người Trung Quốc", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "le Japon", "vi": "Nhật Bản", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "japonais(e)", "vi": "người Nhật", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "les États-Unis", "vi": "Mỹ", "type": "masculin (pl)", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "américain(e)", "vi": "người Mỹ", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "l'Angleterre", "vi": "Anh", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "anglais(e)", "vi": "người Anh", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "l'Allemagne", "vi": "Đức", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "allemand(e)", "vi": "người Đức", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "l'Italie", "vi": "Ý", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "italien(ne)", "vi": "người Ý", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "l'Espagne", "vi": "Tây Ban Nha", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "espagnol(e)", "vi": "người Tây Ban Nha", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "le Canada", "vi": "Canada", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "canadien(ne)", "vi": "người Canada", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "la Corée", "vi": "Hàn Quốc", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "coréen(ne)", "vi": "người Hàn", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "la Thaïlande", "vi": "Thái Lan", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "le Mexique", "vi": "Mexico (ngoại lệ masc)", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "la langue", "vi": "ngôn ngữ", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "la nationalité", "vi": "quốc tịch", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "l'étranger", "vi": "nước ngoài", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "11.Pays", "sheetLabel": "Quốc gia"}, {"fr": "grand(e)", "vi": "cao/lớn", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "petit(e)", "vi": "nhỏ/thấp", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "gros(se)", "vi": "to/béo", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "mince", "vi": "mảnh khảnh", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "jeune", "vi": "trẻ", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "vieux / vieille", "vi": "già", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "beau / belle", "vi": "đẹp", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "joli(e)", "vi": "xinh", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "les cheveux longs", "vi": "tóc dài", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "les cheveux courts", "vi": "tóc ngắn", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "blond(e)", "vi": "tóc vàng", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "brun(e)", "vi": "tóc nâu", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "les yeux bleus", "vi": "mắt xanh", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "gentil(le)", "vi": "tốt bụng", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "sympathique", "vi": "dễ mến", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "intelligent(e)", "vi": "thông minh", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "sérieux / sérieuse", "vi": "nghiêm túc", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "timide", "vi": "nhút nhát", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "calme", "vi": "điềm tĩnh", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "drôle / amusant(e)", "vi": "vui tính", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "sociable", "vi": "hòa đồng", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "travailleur / travailleuse", "vi": "chăm chỉ", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "paresseux / paresseuse", "vi": "lười biếng", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "heureux / heureuse", "vi": "hạnh phúc", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "triste", "vi": "buồn", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "fatigué(e)", "vi": "mệt mỏi", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "content(e)", "vi": "hài lòng", "type": "adjectif", "cat": "vie_quotidienne", "ex": "", "sheet": "12.Description", "sheetLabel": "Mô tả"}, {"fr": "un kilo de", "vi": "một ký", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "un demi-kilo de", "vi": "nửa ký", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "cent grammes de", "vi": "100 gram", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "un litre de", "vi": "một lít", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "une bouteille de", "vi": "một chai", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "un paquet de", "vi": "một gói", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "une boîte de", "vi": "một hộp", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "une tranche de", "vi": "một lát", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "un morceau de", "vi": "một miếng", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "une douzaine de", "vi": "một tá (12)", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "un peu de", "vi": "một chút", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "beaucoup de", "vi": "nhiều", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "trop de", "vi": "quá nhiều", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "assez de", "vi": "đủ", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "plus de", "vi": "nhiều hơn", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "moins de", "vi": "ít hơn", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "l'argent", "vi": "tiền", "type": "masculin", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "l'euro", "vi": "euro", "type": "masculin", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "le prix", "vi": "giá", "type": "masculin", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "cher / chère", "vi": "đắt", "type": "adjectif", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "bon marché", "vi": "rẻ", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "gratuit(e)", "vi": "miễn phí", "type": "adjectif", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "payer", "vi": "trả tiền", "type": "verbe", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "coûter", "vi": "có giá", "type": "verbe", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "Combien ça coûte ?", "vi": "Cái này giá bao nhiêu?", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "la monnaie", "vi": "tiền lẻ/tiền thối", "type": "féminin", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "la carte bancaire", "vi": "thẻ ngân hàng", "type": "féminin", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "une tranche de", "vi": "một lát", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "un morceau de", "vi": "một miếng", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "la quantité", "vi": "số lượng", "type": "féminin", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "faire les courses", "vi": "đi chợ/mua sắm", "type": "verbe", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "la liste de courses", "vi": "danh sách mua sắm", "type": "féminin", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "à la dernière minute", "vi": "vào phút chót", "type": "", "cat": "grammaire", "ex": "", "sheet": "13.Quantites", "sheetLabel": "Số lượng"}, {"fr": "un anniversaire", "vi": "sinh nhật", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "un mariage", "vi": "đám cưới", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "une fête", "vi": "bữa tiệc", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "une soirée", "vi": "tiệc tối", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "un festival", "vi": "lễ hội", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "un spectacle", "vi": "buổi biểu diễn", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "un concert", "vi": "buổi hòa nhạc", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "un cadeau", "vi": "món quà", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "une invitation", "vi": "lời mời", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "inviter", "vi": "mời", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "organiser", "vi": "tổ chức", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "fêter / célébrer", "vi": "ăn mừng/kỷ niệm", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "offrir un cadeau", "vi": "tặng quà", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "À mon avis...", "vi": "Theo tôi...", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "Je pense que...", "vi": "Tôi nghĩ rằng...", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "Je trouve que...", "vi": "Tôi thấy rằng...", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "Je crois que...", "vi": "Tôi tin rằng...", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "Je suis d'accord", "vi": "Tôi đồng ý", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "Je ne suis pas d'accord", "vi": "Tôi không đồng ý", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "C'est vrai", "vi": "Đúng vậy", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "C'est faux", "vi": "Sai rồi", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "avec plaisir", "vi": "rất vui lòng", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "Bonne idée !", "vi": "Ý hay đấy!", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "Je suis occupé(e)", "vi": "Tôi bận", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "Je suis disponible", "vi": "Tôi rảnh", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "Une autre fois", "vi": "Lần khác", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "la crémaillère", "vi": "tiệc tân gia", "type": "féminin", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "pendre la crémaillère", "vi": "tổ chức tân gia", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "un événement festif", "vi": "sự kiện lễ hội", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "planifier", "vi": "lên kế hoạch", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "créer une invitation", "vi": "tạo lời mời", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "envoyer", "vi": "gửi", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "le contact", "vi": "danh bạ/người liên hệ", "type": "masculin", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "Comment ça marche ?", "vi": "Nó hoạt động thế nào?", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "servir à", "vi": "dùng để", "type": "verbe", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "C'est génial !", "vi": "Tuyệt vời!", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "14.Evenements_Opinion", "sheetLabel": "Sự kiện & Ý kiến"}, {"fr": "et", "vi": "và", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "ou", "vi": "hoặc", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "mais", "vi": "nhưng", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "parce que", "vi": "bởi vì", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "donc", "vi": "vì vậy", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "alors", "vi": "vậy thì", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "aussi", "vi": "cũng", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "d'abord", "vi": "trước tiên", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "ensuite / puis", "vi": "sau đó", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "enfin", "vi": "cuối cùng", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "pendant", "vi": "trong vòng", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "depuis", "vi": "kể từ", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "avant", "vi": "trước", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "après", "vi": "sau", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "surtout", "vi": "nhất là", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "par exemple", "vi": "ví dụ", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "beaucoup", "vi": "nhiều", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "un peu", "vi": "một chút", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "souvent", "vi": "thường xuyên", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "toujours", "vi": "luôn luôn", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "jamais", "vi": "không bao giờ", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "quelquefois / parfois", "vi": "thỉnh thoảng", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "très", "vi": "rất", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "trop", "vi": "quá", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "ici", "vi": "ở đây", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "là-bas", "vi": "ở đằng kia", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "maintenant", "vi": "bây giờ", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "bientôt", "vi": "sắp tới", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "vite", "vi": "nhanh", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "lentement", "vi": "chậm", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "co- (préfixe)", "vi": "tiền tố: cùng nhau", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "le covoiturage", "vi": "đi chung xe", "type": "masculin", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "le/la cofondateur(trice)", "vi": "đồng sáng lập", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "le/la collègue", "vi": "đồng nghiệp", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "coopérer", "vi": "hợp tác", "type": "verbe", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "chacun(e)", "vi": "mỗi người", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "comme ça", "vi": "như vậy", "type": "", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "gagner du temps", "vi": "tiết kiệm thời gian", "type": "verbe", "cat": "grammaire", "ex": "", "sheet": "15.Mots_utiles", "sheetLabel": "Từ hữu ích"}, {"fr": "être en retard / à l'heure", "vi": "trễ giờ / đúng giờ", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "être d'accord", "vi": "đồng ý", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "être en train de", "vi": "đang làm gì", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "être content(e) de", "vi": "hài lòng về", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "être fatigué(e)", "vi": "mệt", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "être malade", "vi": "bị bệnh", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "avoir faim / soif", "vi": "đói / khát", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "avoir chaud / froid", "vi": "nóng / lạnh", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "avoir sommeil", "vi": "buồn ngủ", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "avoir peur (de)", "vi": "sợ", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "avoir besoin de", "vi": "cần", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "avoir envie de", "vi": "muốn, thèm", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "avoir mal à", "vi": "đau ở", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "avoir raison / tort", "vi": "đúng / sai", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "avoir ... ans", "vi": "bao nhiêu tuổi", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "faire les courses", "vi": "đi chợ", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "faire la cuisine", "vi": "nấu ăn", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "faire le ménage", "vi": "dọn nhà", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "faire la vaisselle", "vi": "rửa bát", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "faire du sport", "vi": "tập thể thao", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "faire une promenade", "vi": "đi dạo", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "faire attention", "vi": "chú ý", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "faire la fête", "vi": "tiệc tùng", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "faire un voyage", "vi": "đi du lịch", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "prendre le petit-déjeuner", "vi": "ăn sáng", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "prendre un café", "vi": "uống cà phê", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "prendre le bus / métro", "vi": "đi xe buýt / tàu", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "prendre rendez-vous", "vi": "đặt lịch hẹn", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "prendre une douche", "vi": "tắm vòi sen", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "prendre des photos", "vi": "chụp ảnh", "type": "", "cat": "verbes", "ex": "", "sheet": "16.Expressions_Verbes", "sheetLabel": "Cụm động từ"}, {"fr": "tous les jours", "vi": "mỗi ngày", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "tout le temps", "vi": "suốt thời gian", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "de temps en temps", "vi": "thỉnh thoảng", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "en ce moment", "vi": "lúc này", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "tout à l'heure", "vi": "lát nữa", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "en avance / en retard", "vi": "sớm / trễ", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "le week-end", "vi": "cuối tuần", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "à mon avis", "vi": "theo tôi", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "je pense que", "vi": "tôi nghĩ rằng", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "je suis d'accord", "vi": "tôi đồng ý", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "ça me plaît", "vi": "tôi thích cái đó", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "ça dépend", "vi": "còn tùy", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "c'est dommage", "vi": "tiếc quá", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "ça m'est égal", "vi": "tôi không quan tâm", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "s'il vous/te plaît", "vi": "làm ơn", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "je voudrais...", "vi": "tôi muốn...", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "est-ce que je peux...?", "vi": "tôi có thể...?", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "qu'est-ce que c'est ?", "vi": "cái này là gì?", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "comment ça s'écrit ?", "vi": "viết như thế nào?", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "je ne comprends pas", "vi": "tôi không hiểu", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "pouvez-vous répéter ?", "vi": "bạn nhắc lại được không?", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "à côté de", "vi": "bên cạnh", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "en face de", "vi": "đối diện", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "à droite / à gauche", "vi": "bên phải / trái", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "au-dessus de", "vi": "phía trên", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "en bas / en haut", "vi": "dưới / trên", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "près de / loin de", "vi": "gần / xa", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "au milieu de", "vi": "ở giữa", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "se lever", "vi": "thức dậy", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "se laver", "vi": "rửa, tắm", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "s'habiller", "vi": "mặc quần áo", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "se coucher", "vi": "đi ngủ", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}, {"fr": "se dépêcher", "vi": "vội vàng", "type": "", "cat": "vie_quotidienne", "ex": "", "sheet": "17.Expressions_Comm", "sheetLabel": "Giao tiếp"}];
+const fillExercises = [{"sentence": "Je ___ à 6 heures du matin.", "answer": "me lève", "hint": "se lever (Je)", "rule": "Verbes pronominaux: je me lève, tu te lèves, il/elle se lève"}, {"sentence": "Elle ___ avant de sortir.", "answer": "se maquille", "hint": "se maquiller (Elle)", "rule": "Động từ phản thân: se + verbe"}, {"sentence": "Nous ___ les dents chaque matin.", "answer": "nous brossons", "hint": "se brosser les dents (Nous)", "rule": "Verbe pronominal: nous nous brossons"}, {"sentence": "Hier, j'___ avec Marie.", "answer": "ai parlé", "hint": "parler → passé composé avec AVOIR", "rule": "Passé composé = avoir/être + participe passé. parler → parlé"}, {"sentence": "Elle ___ au marché ce matin.", "answer": "est allée", "hint": "aller → passé composé avec ÊTRE (féminin)", "rule": "Verbes de mouvement → être. Féminin = allée"}, {"sentence": "Nous ___ le film hier soir.", "answer": "avons vu", "hint": "voir → passé composé avec AVOIR", "rule": "voir → vu (participe passé irrégulier)"}, {"sentence": "Tu ___ à quelle heure ce matin ?", "answer": "t'es levé(e)", "hint": "se lever → passé composé avec ÊTRE", "rule": "Verbes pronominaux au passé composé → toujours ÊTRE"}, {"sentence": "Ce soir, je ___ au restaurant.", "answer": "vais manger", "hint": "futur proche: aller + infinitif", "rule": "Futur proche = sujet + aller (présent) + infinitif"}, {"sentence": "Elle ___ pas travailler demain.", "answer": "ne va", "hint": "futur proche négatif", "rule": "Futur proche négatif: ne + aller + pas + infinitif"}, {"sentence": "Je ___ parle ___ anglais.", "answer": "ne / pas", "hint": "négation simple: ne...pas", "rule": "Négation: sujet + ne + verbe + pas"}, {"sentence": "Il ___ mange ___ le matin.", "answer": "ne / jamais", "hint": "ne...jamais = không bao giờ", "rule": "ne...jamais = không bao giờ"}, {"sentence": "Je ___ connais ___.", "answer": "ne / personne", "hint": "ne...personne = không ai cả", "rule": "ne...personne = không ai cả"}, {"sentence": "J'aime Marie. → Je ___ aime.", "answer": "l'", "hint": "COD féminin singulier: la → l' trước nguyên âm", "rule": "COD: le/la/l'/les đứng TRƯỚC động từ"}, {"sentence": "Je parle à Paul. → Je ___ parle.", "answer": "lui", "hint": "COI singulier: lui (thay cho à + personne)", "rule": "COI: lui (sing.) / leur (pl.) đứng trước động từ"}, {"sentence": "___ tu habites ?", "answer": "Où est-ce que", "hint": "hỏi địa điểm = où + est-ce que", "rule": "Mots interrogatifs: où=đâu, quand=khi nào, comment=thế nào, pourquoi=tại sao"}, {"sentence": "___ ça coûte ?", "answer": "Combien", "hint": "hỏi giá tiền/số lượng = combien", "rule": "Combien = bao nhiêu (giá, số lượng)"}, {"sentence": "Il ___ manger des légumes. (cần phải)", "answer": "faut", "hint": "Il faut + infinitif", "rule": "Il faut + infinitif = cần phải / phải (không chia ngôi)"}, {"sentence": "J'___ envie ___ dormir.", "answer": "ai / de", "hint": "avoir envie de + infinitif", "rule": "avoir envie de = muốn; construction: avoir + envie + de + infinitif"}, {"sentence": "Elle ___ contente ___ te voir.", "answer": "est / de", "hint": "être content(e) de + infinitif", "rule": "Tính từ + de + infinitif: être content(e) de, être triste de, être prêt(e) à..."}, {"sentence": "Je ___ à nager. (đang học)", "answer": "apprends", "hint": "apprendre à + infinitif (verbe + à)", "rule": "Verbe + À + infinitif: apprendre à, commencer à, réussir à, aider à..."}, {"sentence": "Paul est ___ grand ___ moi.", "answer": "plus / que", "hint": "so sánh hơn với tính từ", "rule": "So sánh: plus/aussi/moins + adj/adv + que"}, {"sentence": "J'ai ___ livres ___ toi.", "answer": "plus de / que", "hint": "so sánh số lượng với danh từ", "rule": "So sánh số lượng: plus de / autant de / moins de + nom + que"}, {"sentence": "Je mange ___ pain.", "answer": "du", "hint": "article partitif masculin (bánh mì = không đếm được)", "rule": "Article partitif: du (masc.) / de la (fém.) / de l' / des → dùng cho thứ không đếm được"}, {"sentence": "Je n'ai pas ___ café.", "answer": "de", "hint": "phủ định → de (không dùng du/de la/des)", "rule": "Phủ định: du/de la/un/une/des → DE (hoặc D' trước nguyên âm)"}, {"sentence": "J'aime ___ café. (cà phê nói chung)", "answer": "le", "hint": "article défini: nói về cả loại", "rule": "Article défini le/la/les: nói về thứ cụ thể HOẶC cả loại (J'aime le café = Tôi thích cà phê nói chung)"}, {"sentence": "Elle est très ___ (sportif → féminin).", "answer": "sportive", "hint": "-f → -ve au féminin", "rule": "Accord: -f → -ve (sportif→sportive, actif→active, positif→positive)"}, {"sentence": "Ils sont très ___ (heureux → pluriel masculin).", "answer": "heureux", "hint": "masculin pluriel: -eux ne change pas", "rule": "Pluriel: adj se termine par -s ou -x → pas de changement (heureux reste heureux)"}];
+
+const manualDefaults=[
+  {fr:"en",vi:"của nó / một số",type:"pron.",cat:"pronoms",ex:"J'en veux deux.",sheet:"",sheetLabel:"Thêm tay"},
+  {fr:"y",vi:"ở đó / đến đó",type:"pron.",cat:"pronoms",ex:"J'y vais demain.",sheet:"",sheetLabel:"Thêm tay"},
+  {fr:"ne ... pas",vi:"không (phủ định)",type:"adv. nég.",cat:"grammaire",ex:"Je ne sais pas.",sheet:"",sheetLabel:"Thêm tay"},
+  {fr:"parce que",vi:"bởi vì",type:"conj.",cat:"grammaire",ex:"Je reste parce que je suis fatigué.",sheet:"",sheetLabel:"Thêm tay"},
+];
+
+let allCards=[],filteredCards=[],currentCategory='all',currentSheet='all',currentMode='flashcard';
+let fcQueue=[],fcIndex=0,fcCorrect=0,fcWrong=0,isFlipped=false;
+let matchSelected=null,matchCorrect=0,matchTotal=0;
+let xlsxWorkbook=null,xlsxSheetData=[];
+
+// Fill state
+let fillQueue=[],fillIndex=0,fillCorrect=0,fillFilter='all';
+
+function saveCards(){try{localStorage.setItem('polly_fr_v3',JSON.stringify(allCards.filter(c=>!c.sheet||c.sheetLabel==='Thêm tay')));}catch(e){}}
+function loadCards(){
+  allCards=[...builtinCards,...manualDefaults];
+  try{const s=localStorage.getItem('polly_fr_v3');if(s){const ex=JSON.parse(s);ex.forEach(c=>{if(!allCards.some(x=>x.fr===c.fr&&x.vi===c.vi))allCards.push(c);});}}catch(e){}
+}
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+
+function applyFilters(){
+  filteredCards=allCards.filter(c=>{
+    const catOk=currentCategory==='all'||c.cat===currentCategory;
+    const sheetOk=currentSheet==='all'||c.sheet===currentSheet;
+    return catOk&&sheetOk;
+  });
+  shuffle(filteredCards);
+  document.getElementById('countBadge').textContent=filteredCards.length+' từ';
+  if(currentMode==='flashcard')startFlashcard();
+  else if(currentMode==='match')startMatch();
+}
+function setCategory(cat,btn){
+  currentCategory=cat;
+  document.querySelectorAll('.filter-row:first-child .filter-btn:not(.sheet-btn)').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  applyFilters();
+}
+function setSheet(sheet,btn){
+  currentSheet=sheet;
+  document.querySelectorAll('.sheet-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  applyFilters();
+}
+
+function switchMode(mode){
+  currentMode=mode;
+  ['FC','MT','FI','GR'].forEach((s,i)=>document.getElementById('tab'+s).classList.toggle('active',['flashcard','match','fill','grammar'][i]===mode));
+  document.getElementById('flashcardMode').classList.toggle('hidden',mode!=='flashcard');
+  document.getElementById('matchMode').classList.toggle('hidden',mode!=='match');
+  document.getElementById('fillMode').classList.toggle('hidden',mode!=='fill');
+  document.getElementById('grammarMode').classList.toggle('hidden',mode!=='grammar');
+  document.getElementById('vocabFilters').classList.toggle('hidden',mode==='fill'||mode==='grammar');
+  document.getElementById('progressWrap').classList.toggle('hidden',mode==='grammar');
+  document.getElementById('addSection').classList.toggle('hidden',mode==='grammar');
+  if(mode==='flashcard')startFlashcard();
+  else if(mode==='match'){applyFilters();}
+  else if(mode==='fill')startFill();
+}
+
+// FLASHCARD
+function startFlashcard(){fcQueue=[...filteredCards];shuffle(fcQueue);fcIndex=0;fcCorrect=0;fcWrong=0;isFlipped=false;document.getElementById('cardInner').classList.remove('flipped');document.getElementById('fcComplete').classList.remove('show');document.getElementById('fcActions').style.display='';updateProgressFC();showCard();}
+function showCard(){if(fcIndex>=fcQueue.length){showFCDone();return;}const c=fcQueue[fcIndex];document.getElementById('cardFR').textContent=c.fr;document.getElementById('cardType').textContent=c.type||'';document.getElementById('cardSheet').textContent=c.sheetLabel||'';document.getElementById('cardVI').textContent=c.vi;document.getElementById('cardExample').textContent=c.ex||'';isFlipped=false;document.getElementById('cardInner').classList.remove('flipped');updateProgressFC();}
+function flipCard(){isFlipped=!isFlipped;document.getElementById('cardInner').classList.toggle('flipped',isFlipped);}
+function markCard(ok){if(ok)fcCorrect++;else{fcWrong++;fcQueue.push(fcQueue[fcIndex]);}fcIndex++;showCard();}
+function showFCDone(){document.getElementById('fcActions').style.display='none';document.getElementById('fcComplete').classList.add('show');const pct=Math.round(fcCorrect/(fcCorrect+fcWrong)*100);document.getElementById('fcMsg').textContent=`Đã nhớ đúng ${fcCorrect}/${fcCorrect+fcWrong} (${pct}%) 🌟`;}
+function updateProgressFC(){const total=filteredCards.length,done=Math.min(fcIndex,total),pct=total>0?Math.round(done/total*100):0;document.getElementById('progressBar').style.width=pct+'%';document.getElementById('progressText').textContent=done+' / '+total;document.getElementById('scoreText').textContent='✓ '+fcCorrect+'  ✗ '+fcWrong;}
+
+// MATCHING
+function startMatch(){const pool=filteredCards.length>6?filteredCards.slice(0,6):[...filteredCards];matchTotal=pool.length;matchCorrect=0;matchSelected=null;if(pool.length<2){document.getElementById('matchLeft').innerHTML='<div style="color:var(--muted);padding:14px;text-align:center">Cần ít nhất 2 từ.</div>';document.getElementById('matchRight').innerHTML='';return;}const lItems=pool.map((c,i)=>({text:c.fr,pair:i}));const rItems=pool.map((c,i)=>({text:c.vi,pair:i}));shuffle(rItems);const lEl=document.getElementById('matchLeft'),rEl=document.getElementById('matchRight');lEl.innerHTML='';rEl.innerHTML='';document.getElementById('matchResult').classList.remove('show');lItems.forEach(item=>{const d=document.createElement('div');d.className='match-item';d.textContent=item.text;d.dataset.pair=item.pair;d.dataset.side='fr';d.onclick=()=>onMatchClick(d);lEl.appendChild(d);});rItems.forEach(item=>{const d=document.createElement('div');d.className='match-item';d.textContent=item.text;d.dataset.pair=item.pair;d.dataset.side='vi';d.onclick=()=>onMatchClick(d);rEl.appendChild(d);});updateProgressMatch();}
+function onMatchClick(el){if(el.classList.contains('correct'))return;if(!matchSelected){el.classList.add('selected');matchSelected=el;}else{if(matchSelected===el){el.classList.remove('selected');matchSelected=null;return;}if(matchSelected.dataset.side===el.dataset.side){matchSelected.classList.remove('selected');el.classList.add('selected');matchSelected=el;return;}if(matchSelected.dataset.pair===el.dataset.pair){matchSelected.classList.remove('selected');matchSelected.classList.add('correct');el.classList.add('correct');matchCorrect++;matchSelected=null;updateProgressMatch();if(matchCorrect===matchTotal)setTimeout(()=>{document.getElementById('matchScore').textContent=matchCorrect+'/'+matchTotal+' ✓';document.getElementById('matchMsg').textContent='Tất cả đã khớp! Bravo! 🎊';document.getElementById('matchResult').classList.add('show');},400);}else{matchSelected.classList.add('wrong');el.classList.add('wrong');const a=matchSelected,b=el;setTimeout(()=>{a.classList.remove('selected','wrong');b.classList.remove('selected','wrong');},600);matchSelected=null;}}}
+function updateProgressMatch(){const pct=matchTotal>0?Math.round(matchCorrect/matchTotal*100):0;document.getElementById('progressBar').style.width=pct+'%';document.getElementById('progressText').textContent=matchCorrect+' / '+matchTotal+' cặp';document.getElementById('scoreText').textContent='';}
+
+// FILL IN THE BLANKS
+const fillTopicMap={"pronominal":["Verbes pronominaux","phản thân","se lever","se maquiller","se brosser","se laver"],"passe":["passé","Passé","AVOIR","ÊTRE","participe","passé composé"],"futur":["futur","aller +","Futur","tương lai"],"negation":["négation","ne /","jamais","personne","rien","plus"],"cod":["COD","COI","aime Marie","parle à","aime Marie"],"article":["article","partitif","du","de la","Article"],"structure":["Il faut","avoir envie","Il y a","C est","être content","être prêt","apprendre"]};
+
+function setFillFilter(f,btn){fillFilter=f;document.querySelectorAll('.fill-topic-btn').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');startFill();}
+
+function getFilteredFillEx(){
+  if(fillFilter==='all')return [...fillExercises];
+  const kws=fillTopicMap[fillFilter]||[];
+  return fillExercises.filter(ex=>kws.some(kw=>ex.sentence.includes(kw)||ex.hint.includes(kw)||ex.rule.includes(kw)||ex.answer.includes(kw)));
+}
+
+function startFill(){
+  fillQueue=shuffle(getFilteredFillEx());
+  fillIndex=0;fillCorrect=0;
+  document.getElementById('fillComplete').classList.remove('show');
+  document.getElementById('fillCard').style.display='';
+  document.querySelector('.fill-nav').style.display='';
+  showFillCard();
+}
+
+function showFillCard(){
+  if(fillIndex>=fillQueue.length){showFillDone();return;}
+  const ex=fillQueue[fillIndex];
+  document.getElementById('fillSentence').innerHTML=ex.sentence.replace(/___/g,'<span class="fill-blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>');
+  document.getElementById('fillHint').textContent='💡 '+ex.hint;
+  document.getElementById('fillHint').classList.remove('show');
+  document.getElementById('fillRule').textContent='📖 '+ex.rule;
+  document.getElementById('fillRule').classList.remove('show');
+  document.getElementById('fillFeedback').classList.remove('show','correct-fb','wrong-fb');
+  document.getElementById('fillInput').value='';
+  document.getElementById('fillInput').classList.remove('correct','wrong');
+  document.getElementById('fillInput').disabled=false;
+  document.getElementById('fillNextBtn').textContent='Câu tiếp →';
+  document.getElementById('fillCounter').textContent=(fillIndex+1)+' / '+fillQueue.length+' · ✓ '+fillCorrect;
+  // Topic tag from hint
+  const topic=ex.hint.split('(')[0].trim();
+  document.getElementById('fillTopic').textContent=topic;
+  document.getElementById('progressBar').style.width=(Math.round(fillIndex/fillQueue.length*100))+'%';
+  document.getElementById('progressText').textContent=(fillIndex)+' / '+fillQueue.length;
+  document.getElementById('scoreText').textContent='✓ '+fillCorrect;
+  setTimeout(()=>document.getElementById('fillInput').focus(),50);
+}
+
+function checkFill(){
+  const ex=fillQueue[fillIndex];
+  const input=document.getElementById('fillInput');
+  const userAns=input.value.trim().toLowerCase().replace(/['']/g,"'");
+  const correctAns=ex.answer.toLowerCase().replace(/['']/g,"'");
+  const fb=document.getElementById('fillFeedback');
+  if(userAns===correctAns||userAns===correctAns.replace('(e)','').trim()||userAns===correctAns.replace('(e)','e').trim()){
+    input.classList.add('correct');fb.className='fill-feedback show correct-fb';
+    fb.textContent='✓ Đúng rồi! Đáp án: '+ex.answer;
+    fillCorrect++;document.getElementById('fillCounter').textContent=(fillIndex+1)+' / '+fillQueue.length+' · ✓ '+fillCorrect;
+    document.getElementById('fillNextBtn').textContent='Câu tiếp →';
+    input.disabled=true;
+  }else{
+    input.classList.add('wrong');fb.className='fill-feedback show wrong-fb';
+    fb.innerHTML='✗ Chưa đúng. Đáp án đúng: <strong style="color:var(--gold)">'+ex.answer+'</strong>';
+    document.getElementById('fillRule').classList.add('show');
+    input.disabled=true;
+    document.getElementById('fillNextBtn').textContent='Câu tiếp →';
+  }
+}
+
+function toggleHint(){document.getElementById('fillHint').classList.toggle('show');}
+function toggleRule(){document.getElementById('fillRule').classList.toggle('show');}
+
+function fillNav(dir){
+  if(dir===1){fillIndex++;showFillCard();}
+  else if(dir===-1&&fillIndex>0){fillIndex--;showFillCard();}
+}
+
+function showFillDone(){
+  document.getElementById('fillCard').style.display='none';
+  document.querySelector('.fill-nav').style.display='none';
+  document.getElementById('fillComplete').classList.add('show');
+  const pct=Math.round(fillCorrect/fillQueue.length*100);
+  document.getElementById('fillCompleteMsg').textContent=`Đúng ${fillCorrect}/${fillQueue.length} câu (${pct}%) 🌟`;
+}
+function restartFill(){startFill();}
+
+// GRAMMAR REFERENCE
+function showGram(section,btn){
+  document.querySelectorAll('.gram-section').forEach(s=>s.classList.remove('show'));
+  document.querySelectorAll('.gram-nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('gram-'+section).classList.add('show');
+  if(btn)btn.classList.add('active');
+}
+
+// ADD CARD
+function addCard(){const fr=document.getElementById('newFR').value.trim();const vi=document.getElementById('newVI').value.trim();if(!fr||!vi){alert('Vui lòng điền tiếng Pháp và tiếng Việt!');return;}const type=document.getElementById('newType').value.trim();const cat=document.getElementById('newCat').value;const ex=document.getElementById('newEx').value.trim();allCards.push({fr,vi,type,cat,ex,sheet:'',sheetLabel:'Thêm tay'});saveCards();['newFR','newVI','newType','newEx'].forEach(id=>document.getElementById(id).value='');applyFilters();const btn=document.getElementById('addBtn');btn.textContent='✓ Đã thêm!';setTimeout(()=>btn.textContent='Thêm từ',1500);}
+
+// EXCEL IMPORT
+function onFileSelected(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(ev){try{xlsxWorkbook=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});openModal();}catch(err){alert('Không đọc được file.');}};reader.readAsArrayBuffer(file);e.target.value='';}
+function openModal(){const sel=document.getElementById('sheetSelect');sel.innerHTML='';xlsxWorkbook.SheetNames.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});document.getElementById('importModal').classList.add('show');onSheetChange();}
+function closeModal(){document.getElementById('importModal').classList.remove('show');xlsxWorkbook=null;xlsxSheetData=[];}
+function onSheetChange(){const name=document.getElementById('sheetSelect').value;const sheet=xlsxWorkbook.Sheets[name];xlsxSheetData=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});let headers=[];for(let i=0;i<Math.min(5,xlsxSheetData.length);i++){if(xlsxSheetData[i].some(c=>c!=='')){{headers=xlsxSheetData[i].map(String);break;}}}const defs={colFR:null,colVI:null,colType:null,colEx:null};headers.forEach((h,i)=>{const l=h.toLowerCase();if(defs.colFR===null&&(l.includes('français')||l.includes('french')||l==='fr'||l==='mot'||l.includes('pháp')))defs.colFR=i;if(defs.colVI===null&&(l.includes('việt')||l.includes('viet')||l==='vi'||l.includes('nghĩa')||l.includes('traduction')))defs.colVI=i;if(defs.colType===null&&(l.includes('genre')||l.includes('type')||l.includes('loại')||l==='pos'))defs.colType=i;if(defs.colEx===null&&(l.includes('exemple')||l.includes('ví dụ')||l.includes('example')))defs.colEx=i;});['colFR','colVI','colType','colEx'].forEach((id,idx)=>{const s=document.getElementById(id);s.innerHTML='<option value="">— Bỏ qua —</option>';headers.forEach((h,i)=>{const o=document.createElement('option');o.value=i;o.textContent=h||'Cột '+(i+1);s.appendChild(o);});const dv=[defs.colFR,defs.colVI,defs.colType,defs.colEx][idx];if(dv!==null)s.value=dv;});renderPreview();}
+function getDataRows(){if(xlsxSheetData.length<2)return[];return xlsxSheetData.slice(1).filter(r=>r.some(c=>String(c).trim()!==''));}
+function renderPreview(){const cFR=document.getElementById('colFR').value,cVI=document.getElementById('colVI').value;const rows=getDataRows(),preview=rows.slice(0,5),total=rows.length;document.getElementById('previewCount').textContent='Tổng: '+total+' từ sẽ được import';document.getElementById('confirmImport').disabled=(!cFR&&cFR!=='0')||(!cVI&&cVI!=='0')||total===0;const t=document.getElementById('previewTable');t.innerHTML='';const th=document.createElement('thead');th.innerHTML='<tr><th>🇫🇷 Tiếng Pháp</th><th>🇻🇳 Tiếng Việt</th><th>Loại từ</th><th>Ví dụ</th></tr>';t.appendChild(th);const tb=document.createElement('tbody');preview.forEach(row=>{const tr=document.createElement('tr');['colFR','colVI','colType','colEx'].forEach(id=>{const td=document.createElement('td');const v=document.getElementById(id).value;td.textContent=v!==''?String(row[v]||''):'—';tr.appendChild(td);});tb.appendChild(tr);});t.appendChild(tb);}
+function doImport(){const cFR=document.getElementById('colFR').value,cVI=document.getElementById('colVI').value,cType=document.getElementById('colType').value,cEx=document.getElementById('colEx').value;const rows=getDataRows();let added=0,skipped=0;rows.forEach(row=>{const fr=String(row[cFR]||'').trim(),vi=String(row[cVI]||'').trim();if(!fr||!vi){skipped++;return;}if(allCards.some(c=>c.fr===fr&&c.vi===vi)){skipped++;return;}const type=cType!==''?String(row[cType]||'').trim():'';const ex=cEx!==''?String(row[cEx]||'').trim():'';allCards.push({fr,vi,type,cat:'vie_quotidienne',ex,sheet:'',sheetLabel:'Import'});added++;});saveCards();closeModal();applyFilters();const st=document.getElementById('importStatus');st.textContent='✓ Đã thêm '+added+' từ'+(skipped>0?' (bỏ qua '+skipped+')':'');setTimeout(()=>st.textContent='',4000);}
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(currentMode==='flashcard'){if(e.code==='Space'){e.preventDefault();flipCard();}if(e.code==='ArrowRight')markCard(true);if(e.code==='ArrowLeft')markCard(false);}
+  if(currentMode==='fill'&&e.code==='ArrowRight')fillNav(1);
+});
+
+// v2.1
+loadCards();
+console.log('allCards:', allCards.length, 'filteredCards will be:', allCards.length);
+applyFilters();
+console.log('filteredCards after:', filteredCards.length);
+// Fallback: if something went wrong, retry after DOM settles
+if(filteredCards.length === 0 && allCards.length > 0) {
+  console.warn('Retry applyFilters...');
+  setTimeout(() => applyFilters(), 200);
+}
+</script>
+</body>
+</html>
