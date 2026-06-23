@@ -2,8 +2,10 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Học Pháp Ngữ · Polly</title>
+<title>Học Pháp Ngữ · Polly v2.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Inter:wght@300;400;500;600&display=swap');
@@ -227,7 +229,7 @@ select.add-input{max-width:140px;}
   <div id="flashcardMode">
     <div class="flashcard-scene" onclick="flipCard()">
       <div class="flashcard-inner" id="cardInner">
-        <div class="flashcard-face flashcard-front">
+        <div class="flashcard-face flashcard-front" id="fcFront">
           <div class="card-lang-tag">🇫🇷 Tiếng Pháp</div>
           <div class="card-word" id="cardFR">—</div>
           <div class="card-type" id="cardType"></div>
@@ -751,8 +753,16 @@ document.addEventListener('keydown',e=>{
   if(currentMode==='fill'&&e.code==='ArrowRight')fillNav(1);
 });
 
+// v2.1
 loadCards();
+console.log('allCards:', allCards.length, 'filteredCards will be:', allCards.length);
 applyFilters();
+console.log('filteredCards after:', filteredCards.length);
+// Fallback: if something went wrong, retry after DOM settles
+if(filteredCards.length === 0 && allCards.length > 0) {
+  console.warn('Retry applyFilters...');
+  setTimeout(() => applyFilters(), 200);
+}
 </script>
 </body>
 </html>
